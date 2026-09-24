@@ -1,0 +1,103 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '@/layouts/DocsLayout.astro';
+import type { NavGroup } from '@/components/Sidebar.astro';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((doc) => {
+    const cleanId = doc.id.replace(/\.(md|mdx)$/, '');
+    const slug = cleanId === 'index' ? undefined : cleanId;
+    return {
+      params: { slug },
+      props: { doc },
+    };
+  });
+}
+
+const { doc } = Astro.props;
+const { Content, headings } = await render(doc);
+
+// Fetch all docs to build sidebar navigation and prev/next links
+const allDocs = await getCollection('docs');
+
+const groupPriority: Record<string, number> = {
+  'Getting Started': 1,
+  'Architecture': 2,
+  'API Reference': 3,
+  'UI Components': 4,
+};
+
+// Sort all docs
+const sortedDocs = [...allDocs].sort((a, b) => {
+  const groupA = a.data.group || 'Other';
+  const groupB = b.data.group || 'Other';
+  const prioA = groupPriority[groupA] ?? 99;
+  const prioB = groupPriority[groupB] ?? 99;
+
+  if (prioA !== prioB) {
+    return prioA - prioB;
+  }
+  return (a.data.order ?? 99) - (b.data.order ?? 99);
+});
+
+// Group docs for sidebar
+const groupsMap = new Map<string, NavGroup>();
+
+sortedDocs.forEach((item) => {
+  const gName = item.data.group || 'General';
+  if (!groupsMap.has(gName)) {
+    groupsMap.set(gName, { name: gName, items: [] });
+  }
+
+  const cleanId = item.id.replace(/\.(md|mdx)$/, '');
+  const url = cleanId === 'index' ? '/docs' : `/docs/${cleanId}`;
+
+  groupsMap.get(gName)!.items.push({
+    title: item.data.title,
+    url,
+    icon: item.data.icon,
+    badge: item.data.badge,
+  });
+});
+
+const groups = Array.from(groupsMap.values());
+
+// Calculate Previous and Next links
+const currentIndex = sortedDocs.findIndex((d) => d.id === doc.id);
+const prevDoc = currentIndex > 0 ? sortedDocs[currentIndex - 1] : null;
+const nextDoc = currentIndex < sortedDocs.length - 1 ? sortedDocs[currentIndex + 1] : null;
+
+const cleanPrevId = prevDoc?.id.replace(/\.(md|mdx)$/, '');
+const prevLink = prevDoc
+  ? {
+      title: prevDoc.data.title,
+      url: cleanPrevId === 'index' ? '/docs' : `/docs/${cleanPrevId}`,
+    }
+  : null;
+
+const cleanNextId = nextDoc?.id.replace(/\.(md|mdx)$/, '');
+const nextLink = nextDoc
+  ? {
+      title: nextDoc.data.title,
+      url: cleanNextId === 'index' ? '/docs' : `/docs/${cleanNextId}`,
+    }
+  : null;
+
+const cleanCurrentId = doc.id.replace(/\.(md|mdx)$/, '');
+const currentPath = cleanCurrentId === 'index' ? '/docs' : `/docs/${cleanCurrentId}`;
+---
+
+<DocsLayout
+  title={doc.data.title}
+  description={doc.data.description}
+  group={doc.data.group}
+  badge={doc.data.badge}
+  headings={headings}
+  prev={prevLink}
+  next={nextLink}
+  currentPath={currentPath}
+  groups={groups}
+>
+  <Content />
+</DocsLayout>

@@ -1,0 +1,110 @@
+---
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Sidebar, { type NavGroup } from '../components/Sidebar.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PageNavigation, { type PageLink } from '../components/PageNavigation.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  group?: string;
+  badge?: string;
+  headings?: MarkdownHeading[];
+  prev?: PageLink | null;
+  next?: PageLink | null;
+  currentPath: string;
+  groups: NavGroup[];
+}
+
+const {
+  title,
+  description,
+  group,
+  badge,
+  headings = [],
+  prev,
+  next,
+  currentPath,
+  groups,
+} = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <Header currentPath={currentPath} />
+
+  <div class="mx-auto flex w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8">
+    <!-- Left Sidebar -->
+    <Sidebar currentPath={currentPath} groups={groups} />
+
+    <!-- Center Main Content -->
+    <main class="min-w-0 flex-1 py-8 md:px-8 lg:px-12">
+      <div class="max-w-3xl">
+        <!-- Breadcrumbs -->
+        <Breadcrumbs group={group} title={title} />
+
+        <!-- Page Header -->
+        <header class="mb-8">
+          <div class="flex items-center gap-3">
+            <h1 class="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+              {title}
+            </h1>
+            {badge && (
+              <span class="rounded-full border border-tempest/30 bg-tempest/10 px-2.5 py-0.5 text-xs font-semibold tracking-wider text-tempest uppercase">
+                {badge}
+              </span>
+            )}
+          </div>
+          {description && (
+            <p class="mt-3 text-lg leading-relaxed text-muted-foreground">
+              {description}
+            </p>
+          )}
+          <hr class="mt-6 border-border/70" />
+        </header>
+
+        <!-- Markdown / MDX Body -->
+        <article class="docs-prose">
+          <slot />
+        </article>
+
+        <!-- Bottom Page Navigation -->
+        <PageNavigation prev={prev} next={next} />
+
+        <!-- Footer -->
+        <footer class="mt-16 border-t border-border/60 pt-8 pb-12 text-xs text-muted-foreground">
+          <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div class="flex items-center gap-2">
+              <span class="inline-block h-2 w-2 rounded-full bg-tempest"></span>
+              <span>Canadian Severe Storms Laboratory · Western University</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <a
+                href="https://weather.cssl.ca"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-tempest transition-colors"
+              >
+                Weather Intelligence
+              </a>
+              <span>·</span>
+              <a
+                href="https://github.com/Canadian-Severe-Storms-Laboratory"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-tempest transition-colors"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </main>
+
+    <!-- Right Sidebar Table of Contents -->
+    <TableOfContents headings={headings} />
+  </div>
+</BaseLayout>

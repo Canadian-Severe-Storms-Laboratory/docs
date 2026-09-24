@@ -1,0 +1,43 @@
+---
+title: "Data Pipeline & Quality Control"
+description: "How observations and NWP model data are ingested, validated, and served to CSSL clients."
+group: "Architecture"
+order: 2
+icon: "database"
+---
+
+import Callout from '@/components/mdx/Callout.astro';
+import Accordion from '@/components/mdx/Accordion.astro';
+import AccordionGroup from '@/components/mdx/AccordionGroup.astro';
+
+The CSSL data pipeline processes over 15 million weather observation records daily from across Canada and the northern United States.
+
+## Ingestion Pipeline
+
+Observation ingestion occurs in three stages:
+
+1. **Network Pollers**: Asynchronous workers poll ECCC Datamart, NOAA MADIS, provincial mesonets, and CSSL private cellular loggers.
+2. **Quality Control Filter**: Observations pass through range checks, step-change limits, and spatial buddy checks.
+3. **Time-Series Influx**: Validated records are indexed by station identifier and UTC timestamp.
+
+## Automated Quality Control Flags
+
+Every observation value returned by the API contains a quality assurance status:
+
+<AccordionGroup>
+  <Accordion title="QC_PASSED: Normal Quality Assurance">
+    The reading passed all automated tests: climatological range verification, rate-of-change thresholds, and consistency checks with neighboring stations within 50 km.
+  </Accordion>
+
+  <Accordion title="QC_SUSPECT: Flagged for Review">
+    The sensor reading is physically plausible but deviates by more than 3 standard deviations from local spatial interpolation or shows signs of sensor icing.
+  </Accordion>
+
+  <Accordion title="QC_REJECTED: Sensor Malfunction">
+    The value violates physical bounds (e.g., relative humidity > 105% or surface pressure < 80 kPa at sea level) or the anemometer is frozen. The value is masked in public map layers.
+  </Accordion>
+</AccordionGroup>
+
+<Callout type="info" title="Scientific Citation">
+  When using CSSL Weather Intelligence and Raindrop observations for academic publications or meteorological reports, please cite the Canadian Severe Storms Laboratory, Western University.
+</Callout>

@@ -1,0 +1,27 @@
+---
+interface Props {
+  name: string;
+  type: string;
+  required?: boolean;
+  class?: string;
+}
+
+const { name, type, required = false, class: className = '' } = Astro.props;
+---
+
+<div class={`border-b border-border/70 py-3.5 not-prose ${className}`}>
+  <div class="flex flex-wrap items-baseline gap-2">
+    <code class="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-sm font-semibold text-foreground">
+      {name}
+    </code>
+    <span class="font-mono text-xs text-muted-foreground">{type}</span>
+    {required && (
+      <span class="rounded bg-tempest/10 px-1.5 py-0.2 text-[10px] font-semibold text-tempest uppercase">
+        Required
+      </span>
+    )}
+  </div>
+  <div class="mt-1.5 text-sm leading-relaxed text-foreground/85">
+    <slot />
+  </div>
+</div>

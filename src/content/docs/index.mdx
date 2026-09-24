@@ -1,0 +1,44 @@
+---
+title: "Welcome to CSSL Weather Intelligence"
+description: "The central developer platform and documentation for the Canadian Severe Storms Laboratory Weather Intelligence portal, Cyclone-serve forecast engines, and Raindrop observation APIs."
+group: "Getting Started"
+order: 1
+icon: "sparkles"
+badge: "v2026.1"
+---
+
+import Card from '@/components/mdx/Card.astro';
+import CardGroup from '@/components/mdx/CardGroup.astro';
+import Callout from '@/components/mdx/Callout.astro';
+
+The **Canadian Severe Storms Laboratory (CSSL)** Weather Intelligence Portal is Canada's central repository and access point for high-resolution surface weather observations, numerical forecast model tiles, and severe storm analytics.
+
+<Callout type="tip" title="CSSL Weather Intelligence Environment">
+  Live production maps and high-frequency real-time observation feeds are available at [weather.cssl.ca](https://weather.cssl.ca). All API keys can be managed via the Weather Intelligence settings dashboard.
+</Callout>
+
+## Explore by Topic
+
+Jump straight into the documentation for our core sub-systems, services, and APIs.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/docs/quickstart">
+    Set up your API credentials, authenticate requests, and query live weather stations across Canada in minutes.
+  </Card>
+  <Card title="System Architecture" icon="layers" href="/docs/architecture/overview">
+    Deep-dive into the Raindrop observation backend, Cyclone-serve model tiling engine, and Deck.gl rendering layer.
+  </Card>
+  <Card title="API Reference" icon="code" href="/docs/api/overview">
+    Comprehensive REST API documentation for station metadata, high-frequency observations, and forecast parameters.
+  </Card>
+  <Card title="UI Components Showcase" icon="zap" href="/docs/components/showcase">
+    Explore the Mintlify-styled documentation components including CardGroups, Steps, Tabs, and ParamFields.
+  </Card>
+</CardGroup>
+
+## Core Capabilities
+
+- **Dense Multi-Network Observations**: Ingests observations across Environment and Climate Change Canada (ECCC), NOAA, DWD, provincial mesonet networks, and CSSL research stations.
+- **Tiled Cyclone Model Grids**: High-speed raster tiles for HRRR, RAP, RDPS, and GDPS forecast products with rotated and Lambert conformal projections.
+- **Sub-Minute Radar & Lightning Overlay**: WebGL-accelerated visualization powered by Deck.gl and MapLibre.
+- **CAP Alert Streaming**: Real-time Common Alerting Protocol warnings, watches, and advisories mapped with geospatial geometry.

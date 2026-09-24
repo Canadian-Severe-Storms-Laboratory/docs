@@ -1,0 +1,277 @@
+---
+import { CornerDownLeft, Search, X } from 'lucide-astro';
+---
+
+<!-- Search Modal Backdrop & Dialog -->
+<div
+  id="search-dialog"
+  class="fixed inset-0 z-50 hidden items-start justify-center bg-black/60 p-4 pt-16 backdrop-blur-md sm:pt-24"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Search documentation"
+>
+  <div
+    id="search-box"
+    class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all"
+  >
+    <!-- Search Input Bar -->
+    <div class="flex items-center border-b border-border/80 px-4 py-3">
+      <Search class="mr-3 h-5 w-5 shrink-0 text-tempest" />
+      <input
+        type="search"
+        id="search-input"
+        placeholder="Search documentation, guides, and APIs..."
+        autocomplete="off"
+        spellcheck="false"
+        class="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+      />
+      <button
+        type="button"
+        id="search-close"
+        class="ml-2 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+        aria-label="Close search"
+      >
+        <X class="h-4 w-4" />
+      </button>
+    </div>
+
+    <!-- Search Results / Empty State -->
+    <div id="search-results" class="max-h-96 overflow-y-auto p-2 text-sm">
+      <div id="search-initial" class="p-6 text-center text-xs text-muted-foreground">
+        Type a command or search query to browse topics.
+      </div>
+      <div id="search-empty" class="hidden p-8 text-center text-sm text-muted-foreground">
+        No results found for your query.
+      </div>
+      <ul id="search-list" class="space-y-1"></ul>
+    </div>
+
+    <!-- Modal Footer with Shortcut Hints -->
+    <div class="flex items-center justify-between border-t border-border/70 bg-muted/30 px-4 py-2 text-[11px] text-muted-foreground">
+      <div class="flex items-center gap-3">
+        <span class="flex items-center gap-1">
+          <kbd class="rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]">↑</kbd>
+          <kbd class="rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]">↓</kbd>
+          Navigate
+        </span>
+        <span class="flex items-center gap-1">
+          <kbd class="rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px] flex items-center">
+            <CornerDownLeft class="h-2.5 w-2.5" />
+          </kbd>
+          Select
+        </span>
+      </div>
+      <span class="flex items-center gap-1">
+        <kbd class="rounded border border-border bg-background px-1 py-0.5 font-mono text-[10px]">ESC</kbd>
+        Close
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+  interface SearchItem {
+    title: string;
+    description?: string;
+    url: string;
+    group?: string;
+  }
+
+  function initSearchModal() {
+    const dialog = document.getElementById('search-dialog');
+    const input = document.getElementById('search-input') as HTMLInputElement | null;
+    const closeBtn = document.getElementById('search-close');
+    const resultsContainer = document.getElementById('search-list');
+    const initialMsg = document.getElementById('search-initial');
+    const emptyMsg = document.getElementById('search-empty');
+
+    if (!dialog || !input || !resultsContainer) return;
+
+    // Ensure dialog is attached directly to body to prevent clipping by parent backdrop-filters
+    if (dialog.parentElement !== document.body) {
+      document.body.appendChild(dialog);
+    }
+
+    let searchIndex: SearchItem[] = [];
+    let activeIndex = -1;
+
+    async function loadIndex() {
+      if (searchIndex.length > 0) return;
+      try {
+        const res = await fetch('/api/search.json');
+        if (res.ok) {
+          searchIndex = await res.json();
+          if (input && input.value) {
+            renderResults(input.value);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load search index', err);
+      }
+    }
+
+    function openModal() {
+      dialog?.classList.remove('hidden');
+      dialog?.classList.add('flex');
+      loadIndex();
+      setTimeout(() => input?.focus(), 50);
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      dialog?.classList.add('hidden');
+      dialog?.classList.remove('flex');
+      if (input) input.value = '';
+      if (resultsContainer) resultsContainer.innerHTML = '';
+      initialMsg?.classList.remove('hidden');
+      emptyMsg?.classList.add('hidden');
+      activeIndex = -1;
+      document.body.style.overflow = '';
+    }
+
+    function updateSelection(items: NodeListOf<HTMLElement>) {
+      items.forEach((item, idx) => {
+        if (idx === activeIndex) {
+          item.classList.add('bg-tempest/[0.08]', 'text-tempest', 'dark:bg-tempest/[0.14]');
+          item.scrollIntoView({ block: 'nearest' });
+        } else {
+          item.classList.remove('bg-tempest/[0.08]', 'text-tempest', 'dark:bg-tempest/[0.14]');
+        }
+      });
+    }
+
+    function renderResults(query: string) {
+      if (!query.trim()) {
+        if (resultsContainer) resultsContainer.innerHTML = '';
+        initialMsg?.classList.remove('hidden');
+        emptyMsg?.classList.add('hidden');
+        return;
+      }
+
+      initialMsg?.classList.add('hidden');
+      const q = query.toLowerCase();
+
+      const matched = searchIndex.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          (item.description && item.description.toLowerCase().includes(q)) ||
+          (item.group && item.group.toLowerCase().includes(q))
+      );
+
+      if (matched.length === 0) {
+        if (resultsContainer) resultsContainer.innerHTML = '';
+        emptyMsg?.classList.remove('hidden');
+        return;
+      }
+
+      emptyMsg?.classList.add('hidden');
+      activeIndex = 0;
+
+      if (resultsContainer) {
+        resultsContainer.innerHTML = matched
+          .map(
+            (item, idx) => `
+            <li>
+              <a
+                href="${item.url}"
+                class="search-result-item flex items-center justify-between rounded-lg p-2.5 text-foreground transition-colors hover:bg-muted/70 cursor-pointer ${
+                  idx === 0 ? 'bg-tempest/[0.08] text-tempest dark:bg-tempest/[0.14]' : ''
+                }"
+                data-index="${idx}"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/80 bg-muted/60 text-muted-foreground">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                  </div>
+                  <div class="truncate">
+                    <div class="font-medium text-sm text-foreground flex items-center gap-2">
+                      <span>${item.title}</span>
+                      ${
+                        item.group
+                          ? `<span class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground uppercase">${item.group}</span>`
+                          : ''
+                      }
+                    </div>
+                    ${
+                      item.description
+                        ? `<p class="truncate text-xs text-muted-foreground mt-0.5">${item.description}</p>`
+                        : ''
+                    }
+                  </div>
+                </div>
+                <svg class="h-4 w-4 shrink-0 text-muted-foreground ml-2 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </a>
+            </li>
+          `
+          )
+          .join('');
+      }
+    }
+
+    const triggers = document.querySelectorAll('#search-trigger, [data-search-trigger]');
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', openModal);
+    });
+
+    resultsContainer.addEventListener('click', (e) => {
+      const link = (e.target as HTMLElement).closest('a');
+      if (link) {
+        closeModal();
+      }
+    });
+
+    closeBtn?.addEventListener('click', closeModal);
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeModal();
+    });
+
+    input.addEventListener('input', (e) => {
+      const val = (e.target as HTMLInputElement).value;
+      renderResults(val);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (dialog.classList.contains('hidden')) {
+          openModal();
+        } else {
+          closeModal();
+        }
+      } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        openModal();
+      } else if (e.key === 'Escape' && !dialog.classList.contains('hidden')) {
+        closeModal();
+      } else if (!dialog.classList.contains('hidden')) {
+        const items = resultsContainer.querySelectorAll<HTMLElement>('.search-result-item');
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % items.length;
+          updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeIndex = (activeIndex - 1 + items.length) % items.length;
+          updateSelection(items);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (activeIndex >= 0 && items[activeIndex]) {
+            const link = items[activeIndex] as HTMLAnchorElement;
+            window.location.href = link.href;
+          }
+        }
+      }
+    });
+  }
+
+  initSearchModal();
+  document.addEventListener('astro:page-load', initSearchModal);
+</script>

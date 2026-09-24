@@ -1,0 +1,54 @@
+---
+import { ArrowLeft, ArrowRight } from 'lucide-astro';
+
+export interface PageLink {
+  title: string;
+  url: string;
+}
+
+interface Props {
+  prev?: PageLink | null;
+  next?: PageLink | null;
+  class?: string;
+}
+
+const { prev, next, class: className = '' } = Astro.props;
+---
+
+{(prev || next) && (
+  <div class={`mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-border/80 not-prose ${className}`}>
+    {prev ? (
+      <a
+        href={prev.url}
+        class="not-prose no-underline hover:no-underline group flex flex-col items-start rounded-xl border border-border/80 bg-card p-4 text-card-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-tempest/50 hover:shadow-xs"
+        style="text-decoration: none;"
+      >
+        <span class="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-tempest transition-colors mb-1 no-underline" style="text-decoration: none;">
+          <ArrowLeft class="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+          <span>Previous</span>
+        </span>
+        <span class="text-sm font-semibold tracking-tight text-foreground group-hover:text-tempest transition-colors line-clamp-1 no-underline" style="text-decoration: none;">
+          {prev.title}
+        </span>
+      </a>
+    ) : (
+      <div />
+    )}
+
+    {next ? (
+      <a
+        href={next.url}
+        class="not-prose no-underline hover:no-underline group flex flex-col items-end rounded-xl border border-border/80 bg-card p-4 text-card-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-tempest/50 hover:shadow-xs text-right sm:col-start-2"
+        style="text-decoration: none;"
+      >
+        <span class="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-tempest transition-colors mb-1 no-underline" style="text-decoration: none;">
+          <span>Next</span>
+          <ArrowRight class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+        <span class="text-sm font-semibold tracking-tight text-foreground group-hover:text-tempest transition-colors line-clamp-1 no-underline" style="text-decoration: none;">
+          {next.title}
+        </span>
+      </a>
+    ) : null}
+  </div>
+)}

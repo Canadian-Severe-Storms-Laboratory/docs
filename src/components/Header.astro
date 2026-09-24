@@ -1,0 +1,130 @@
+---
+import { Github, Menu, Search } from 'lucide-astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = '' } = Astro.props;
+---
+
+<header class="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <!-- Left: Brand Logo & Docs Tag -->
+    <div class="flex items-center gap-4">
+      <!-- Mobile sidebar toggle -->
+      <button
+        type="button"
+        id="mobile-sidebar-toggle"
+        class="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer"
+        aria-label="Toggle navigation menu"
+      >
+        <Menu class="h-5 w-5" />
+      </button>
+
+      <a href="/docs" class="flex items-center gap-3 transition-opacity hover:opacity-90">
+        <!-- Exact CSSL Weather Intelligence logo lockup from mesonet -->
+        <div class="flex shrink-0 items-center">
+          <img
+            src="/cssl_intel_light.svg"
+            alt="CSSL Weather Intelligence"
+            class="h-[22px] sm:h-[25px] w-auto shrink-0 dark:hidden"
+          />
+          <img
+            src="/cssl_intel_dark.svg"
+            alt="CSSL Weather Intelligence"
+            class="hidden h-[22px] sm:h-[25px] w-auto shrink-0 dark:block"
+          />
+        </div>
+        <div class="hidden h-4 w-px bg-border/80 shrink-0 sm:block" aria-hidden="true"></div>
+        <span class="rounded-full border border-tempest/30 bg-tempest/10 px-2 py-0.5 text-[10px] font-semibold text-tempest tracking-wider uppercase">
+          Docs
+        </span>
+      </a>
+    </div>
+
+    <!-- Center: Mintlify Search Trigger -->
+    <div class="flex flex-1 justify-center px-4 max-w-md">
+      <button
+        type="button"
+        id="search-trigger"
+        data-search-trigger
+        class="group flex w-full max-w-xs items-center justify-between rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground transition-all hover:border-tempest/50 hover:bg-muted/70 hover:text-foreground cursor-pointer sm:w-64"
+      >
+        <span class="flex items-center gap-2">
+          <Search class="h-3.5 w-3.5 text-muted-foreground group-hover:text-tempest transition-colors" />
+          <span>Search docs...</span>
+        </span>
+        <kbd class="hidden items-center gap-0.5 rounded border border-border/80 bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
+          <span class="text-xs">⌘</span>K
+        </kbd>
+      </button>
+    </div>
+
+    <!-- Right: Navigation Links, App Link, Theme Toggle -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <nav class="hidden items-center gap-5 text-sm font-medium text-muted-foreground md:flex">
+        <a
+          href="/docs"
+          class={`transition-colors hover:text-foreground ${
+            currentPath === '/docs' || currentPath === '/docs/' ? 'text-tempest font-semibold' : ''
+          }`}
+        >
+          Guides
+        </a>
+        <a
+          href="/docs/architecture/overview"
+          class={`transition-colors hover:text-foreground ${
+            currentPath.includes('/architecture') ? 'text-tempest font-semibold' : ''
+          }`}
+        >
+          Architecture
+        </a>
+        <a
+          href="/docs/api/overview"
+          class={`transition-colors hover:text-foreground ${
+            currentPath.includes('/api') ? 'text-tempest font-semibold' : ''
+          }`}
+        >
+          API
+        </a>
+        <a
+          href="/docs/components/showcase"
+          class={`transition-colors hover:text-foreground ${
+            currentPath.includes('/components') ? 'text-tempest font-semibold' : ''
+          }`}
+        >
+          Components
+        </a>
+      </nav>
+
+      <div class="hidden h-4 w-px bg-border md:block"></div>
+
+      <!-- Weather Intelligence Portal Link -->
+      <a
+        href="https://weather.cssl.ca"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hidden items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-tempest/40 hover:bg-muted hover:text-foreground transition-all sm:inline-flex"
+      >
+        <span class="h-2 w-2 rounded-full bg-tempest"></span>
+        <span>Weather Intelligence</span>
+      </a>
+
+      <!-- External Links -->
+      <a
+        href="https://github.com/Canadian-Severe-Storms-Laboratory"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub Repository"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      >
+        <Github class="h-4 w-4" />
+      </a>
+
+      <!-- Theme Switcher -->
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

@@ -1,0 +1,22 @@
+---
+interface Props {
+  variant?: 'default' | 'tempest' | 'outline' | 'secondary' | 'success';
+  class?: string;
+}
+
+const { variant = 'default', class: className = '' } = Astro.props;
+
+const variants = {
+  default: 'bg-muted text-muted-foreground border-border',
+  tempest: 'bg-tempest/10 text-tempest border-tempest/30 font-semibold',
+  outline: 'bg-transparent text-foreground border-border',
+  secondary: 'bg-secondary text-secondary-foreground border-transparent',
+  success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+};
+---
+
+<span
+  class={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase transition-colors not-prose ${variants[variant]} ${className}`}
+>
+  <slot />
+</span>

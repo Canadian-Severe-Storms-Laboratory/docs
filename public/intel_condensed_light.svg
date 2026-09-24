@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 425.99 140.6">
+  <!-- Generator: Adobe Illustrator 30.2.1, SVG Export Plug-In . SVG Version: 2.1.1 Build 1)  -->
+  <defs>
+    <style>
+      .st0 {
+        font-family: ArialMT, Arial;
+        font-size: 25.42px;
+      }
+
+      .st0, .st1, .st2 {
+        isolation: isolate;
+      }
+
+      .st2 {
+        font-family: Arial-BoldMT, Arial;
+        font-size: 108.71px;
+        font-weight: 700;
+      }
+    </style>
+  </defs>
+  <g>
+    <path d="M66.17,0l-13.43,24.2-13-7.3,5.84,36.9-16.98-14.25-4.19,10.5-21.88-5.08,7.6,22.04-10.13,5.92,34.54,27.84-5.58,13.44,19.28-3.96,3.58-5.61-15,3.08,3.5-8.43-31.93-25.73,7.53-4.4-6.06-17.59,17.47,4.05,3.26-8.18,21.7,18.22-6.29-39.78,8.59,4.82,11.59-20.87,11.59,20.87,8.59-4.82-6.29,39.78,21.7-18.22,3.26,8.18,17.47-4.05-6.06,17.59,7.53,4.4-31.93,25.73,3.53,8.51-13.64-2.56-2.69,4.35,24.12,4.52-5.54-13.36,34.54-27.84-10.13-5.92,7.59-22.04-21.88,5.08-4.19-10.5-16.98,14.25,5.84-36.9-13,7.3L66.17,0Z"/>
+    <path d="M77.67,70.81l-23.94,39.01,16.64-3.15-20.95,33.93,6.43-1.32,24.27-39.31-16.68,3.15,20.62-33.6-.03-.02-6.36,1.3h0Z"/>
+  </g>
+  <g>
+    <g class="st1">
+      <g class="st1">
+        <g class="st1">
+          <text class="st2" transform="translate(139.31 96.47)"><tspan x="0" y="0">CSSL</tspan></text>
+        </g>
+      </g>
+    </g>
+    <g class="st1">
+      <g class="st1">
+        <text class="st0" transform="translate(167.65 120.53)"><tspan x="0" y="0">Weather Intelligence</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>

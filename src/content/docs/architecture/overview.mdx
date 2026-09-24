@@ -1,0 +1,62 @@
+---
+title: "Architecture Overview"
+description: "High-level overview of the CSSL Weather Intelligence web application (weather.cssl.ca), data services, and mapping stack."
+group: "Architecture"
+order: 1
+icon: "layers"
+---
+
+import Callout from '@/components/mdx/Callout.astro';
+import CardGroup from '@/components/mdx/CardGroup.astro';
+import Card from '@/components/mdx/Card.astro';
+import Tabs from '@/components/mdx/Tabs.astro';
+import TabItem from '@/components/mdx/TabItem.astro';
+import SystemTopologyGraph from '@/components/graphs/SystemTopologyGraph';
+
+The CSSL Weather Intelligence ecosystem combines real-time observation ingestion, high-speed forecast model tiling, and hardware-accelerated WebGL visualization.
+
+## System Topology
+
+The client application connects to two decoupled backends, ensuring that service interruptions in model processing never degrade observation streams. Explore the interactive topology below: drag to pan, scroll to zoom, or click any node to inspect architectural specifications.
+
+<SystemTopologyGraph client:load />
+
+## Architectural Components
+
+### 1. The Mapping Stack
+The core interactive map is built with **MapLibre GL** and **Deck.gl** (`react-map-gl/maplibre`):
+- **MapLibre** provides high-frame-rate vector basemap rendering via ESRI basemap tiles.
+- **Deck.gl** sits as an overlay for data visualization layers (`src/lib/layers/`), rendering tens of thousands of observation pins, wind barbs, and animated streamlines at 60 FPS.
+- The map mounts independently of the station feed—a delayed Raindrop response never blocks forecast overlays.
+
+### 2. Raindrop Backend
+Raindrop handles station observation ingestion, metadata cataloging, and alert dissemination:
+- Validated via **Zod** schemas to guarantee typed safety end-to-end.
+- Supports authenticated sessions with cookie refresh workflows (`credentials: 'include'`).
+- Provides automated data quality flags (`QC_PASSED`, `QC_SUSPECT`, `QC_REJECTED`).
+
+### 3. Cyclone-serve Forecast Engine
+Cyclone-serve ingests raw numerical weather prediction (NWP) model outputs (GRIB2) and pre-computes tiled data grids:
+- Projects grids across complex projections (Rotated Lat/Lon, Lambert Conformal).
+- Evaluates thermodynamic profiles: DGZ (Dendritic Growth Zone), convective available potential energy (CAPE), and wind shear.
+- Client-side caching handled via a Service Worker (`sw.js`).
+
+<Callout type="warning" title="Decoupled Resilience">
+  Raindrop and Cyclone-serve run on isolated infrastructure clusters. If Cyclone-serve undergoes model ingestion maintenance, the live Weather Intelligence map remains fully operational.
+</Callout>
+
+## Three View Modes
+
+The interface operates across three temporal modes:
+
+<Tabs labels={["Historical", "Nowcast (Live)", "Forecast"]}>
+  <TabItem default={true}>
+    **Historical Mode** allows researchers and forecasters to scrub back in time to analyze high-impact weather events, tornadic supercells, and squall lines with minute-by-minute granularity.
+  </TabItem>
+  <TabItem>
+    **Nowcast Mode** displays current surface observations refreshed every 60 seconds, accompanied by live CAP warning polygons, NEXRAD radar reflectivity, and real-time wind barbs.
+  </TabItem>
+  <TabItem>
+    **Forecast Mode** renders numerical forecast model outputs up to 48 hours into the future, providing soundings, hourly surface fields, and severe convective outlooks.
+  </TabItem>
+</Tabs>

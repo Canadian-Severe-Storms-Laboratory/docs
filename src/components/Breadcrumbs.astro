@@ -1,0 +1,24 @@
+---
+import { ChevronRight } from 'lucide-astro';
+
+interface Props {
+  group?: string;
+  title: string;
+}
+
+const { group, title } = Astro.props;
+---
+
+<nav aria-label="Breadcrumb" class="mb-4 flex items-center gap-1.5 text-xs text-muted-foreground not-prose">
+  <a href="/docs" class="hover:text-foreground transition-colors">
+    Docs
+  </a>
+  {group && (
+    <>
+      <ChevronRight class="h-3 w-3 text-muted-foreground/60" />
+      <span class="text-muted-foreground/80">{group}</span>
+    </>
+  )}
+  <ChevronRight class="h-3 w-3 text-muted-foreground/60" />
+  <span class="text-tempest font-medium">{title}</span>
+</nav>

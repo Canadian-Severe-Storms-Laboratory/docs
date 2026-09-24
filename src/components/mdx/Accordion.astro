@@ -1,0 +1,24 @@
+---
+import { ChevronRight } from 'lucide-astro';
+
+interface Props {
+  title: string;
+  defaultOpen?: boolean;
+  class?: string;
+}
+
+const { title, defaultOpen = false, class: className = '' } = Astro.props;
+---
+
+<details
+  open={defaultOpen ? true : undefined}
+  class={`mint-accordion group my-3 rounded-xl border border-border/80 bg-card text-card-foreground transition-all duration-200 open:border-tempest/40 not-prose ${className}`}
+>
+  <summary class="flex cursor-pointer select-none items-center justify-between p-4 text-sm font-semibold tracking-tight text-foreground transition-colors hover:text-tempest list-none [&::-webkit-details-marker]:hidden">
+    <span>{title}</span>
+    <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-90 group-open:text-tempest" />
+  </summary>
+  <div class="border-t border-border/60 px-4 pt-3 pb-4 text-sm leading-relaxed text-foreground/80 docs-prose">
+    <slot />
+  </div>
+</details>

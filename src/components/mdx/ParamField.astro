@@ -1,0 +1,55 @@
+---
+interface Props {
+  query?: string;
+  path?: string;
+  body?: string;
+  header?: string;
+  type: string;
+  required?: boolean;
+  default?: string;
+  class?: string;
+}
+
+const {
+  query,
+  path,
+  body,
+  header,
+  type,
+  required = false,
+  default: defaultValue,
+  class: className = '',
+} = Astro.props;
+
+const name = query || path || body || header || 'param';
+const location = query ? 'query' : path ? 'path' : body ? 'body' : header ? 'header' : null;
+---
+
+<div class={`border-b border-border/70 py-3.5 not-prose ${className}`}>
+  <div class="flex flex-wrap items-baseline gap-2">
+    <code class="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-sm font-semibold text-foreground">
+      {name}
+    </code>
+    <span class="font-mono text-xs text-muted-foreground">{type}</span>
+    {location && (
+      <span class="rounded bg-muted px-1.5 py-0.2 font-mono text-[10px] text-muted-foreground uppercase">
+        {location}
+      </span>
+    )}
+    {required ? (
+      <span class="rounded bg-tempest/10 px-1.5 py-0.2 text-[10px] font-semibold text-tempest uppercase">
+        Required
+      </span>
+    ) : (
+      <span class="text-xs text-muted-foreground/70">optional</span>
+    )}
+    {defaultValue && (
+      <span class="text-xs text-muted-foreground">
+        default: <code class="font-mono">{defaultValue}</code>
+      </span>
+    )}
+  </div>
+  <div class="mt-1.5 text-sm leading-relaxed text-foreground/85">
+    <slot />
+  </div>
+</div>
