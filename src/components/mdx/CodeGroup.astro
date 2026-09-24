@@ -36,49 +36,57 @@ const { class: className = '' } = Astro.props;
     csv: 'CSV',
   };
 
-  document.querySelectorAll<HTMLElement>('.code-group').forEach((group) => {
-    const tabs = group.querySelector('.code-group-tabs')!;
-    const pres = [...group.querySelectorAll<HTMLPreElement>('.code-group-content > pre')];
-    const copy = group.querySelector<HTMLButtonElement>('.code-copy-inline')!;
-    let active = 0;
+  function setupCodeGroups() {
+    document.querySelectorAll<HTMLElement>('.code-group').forEach((group) => {
+      if (group.dataset.initialized) return;
+      group.dataset.initialized = 'true';
 
-    const buttons = pres.map((pre, i) => {
-      const lang = pre.dataset.language ?? '';
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.setAttribute('role', 'tab');
-      button.textContent = pre.dataset.title ?? LANGUAGE_LABELS[lang] ?? lang.toUpperCase();
-      button.className =
-        'code-tab -mb-px cursor-pointer border-b-2 px-2.5 py-2.5 whitespace-nowrap transition-colors';
-      button.addEventListener('click', () => show(i));
-      tabs.appendChild(button);
-      return button;
-    });
+      const tabs = group.querySelector('.code-group-tabs')!;
+      const pres = [...group.querySelectorAll<HTMLPreElement>('.code-group-content > pre')];
+      const copy = group.querySelector<HTMLButtonElement>('.code-copy-inline')!;
+      let active = 0;
 
-    function show(i: number) {
-      active = i;
-      pres.forEach((pre, idx) => (pre.hidden = idx !== i));
-      buttons.forEach((b, idx) => {
-        const selected = idx === i;
-        b.setAttribute('aria-selected', String(selected));
-        b.classList.toggle('border-tempest', selected);
-        b.classList.toggle('text-white', selected);
-        b.classList.toggle('border-transparent', !selected);
-        b.classList.toggle('text-white/55', !selected);
+      const buttons = pres.map((pre, i) => {
+        const lang = pre.dataset.language ?? '';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'tab');
+        button.textContent = pre.dataset.title ?? LANGUAGE_LABELS[lang] ?? lang.toUpperCase();
+        button.className =
+          'code-tab -mb-px cursor-pointer border-b-2 px-2.5 py-2.5 whitespace-nowrap transition-colors';
+        button.addEventListener('click', () => show(i));
+        tabs.appendChild(button);
+        return button;
       });
-    }
 
-    copy.addEventListener('click', async () => {
-      const pre = pres[active];
-      try {
-        await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
-        copy.textContent = 'Copied';
-        setTimeout(() => (copy.textContent = 'Copy'), 1500);
-      } catch {
-        copy.textContent = 'Failed';
+      function show(i: number) {
+        active = i;
+        pres.forEach((pre, idx) => (pre.hidden = idx !== i));
+        buttons.forEach((b, idx) => {
+          const selected = idx === i;
+          b.setAttribute('aria-selected', String(selected));
+          b.classList.toggle('border-tempest', selected);
+          b.classList.toggle('text-white', selected);
+          b.classList.toggle('border-transparent', !selected);
+          b.classList.toggle('text-white/55', !selected);
+        });
       }
-    });
 
-    show(0);
-  });
+      copy.addEventListener('click', async () => {
+        const pre = pres[active];
+        try {
+          await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
+          copy.textContent = 'Copied';
+          setTimeout(() => (copy.textContent = 'Copy'), 1500);
+        } catch {
+          copy.textContent = 'Failed';
+        }
+      });
+
+      show(0);
+    });
+  }
+
+  setupCodeGroups();
+  document.addEventListener('astro:page-load', setupCodeGroups);
 </script>

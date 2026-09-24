@@ -54,32 +54,37 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 </aside>
 
 <script>
-  const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc-link')];
-  const targets = links
-    .map((link) => document.getElementById(link.dataset.slug ?? ''))
-    .filter((el): el is HTMLElement => el !== null);
+  function setupToc() {
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc-link')];
+    const targets = links
+      .map((link) => document.getElementById(link.dataset.slug ?? ''))
+      .filter((el): el is HTMLElement => el !== null);
 
-  function highlight() {
-    let current: string | undefined = targets[0]?.id;
-    for (const target of targets) {
-      if (target.getBoundingClientRect().top > 120) break;
-      current = target.id;
-    }
-    // At the bottom of the page the last sections can't scroll to the top.
-    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
-      current = targets.at(-1)?.id;
-    }
-    for (const link of links) {
-      const active = link.dataset.slug === current;
-      link.classList.toggle('text-tempest', active);
-      link.classList.toggle('border-tempest', active);
-      link.classList.toggle('text-muted-foreground', !active);
-      link.classList.toggle('border-transparent', !active);
-    }
-  }
+    if (targets.length === 0) return;
 
-  if (targets.length > 0) {
+    function highlight() {
+      let current: string | undefined = targets[0]?.id;
+      for (const target of targets) {
+        if (target.getBoundingClientRect().top > 120) break;
+        current = target.id;
+      }
+      // At the bottom of the page the last sections can't scroll to the top.
+      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+        current = targets.at(-1)?.id;
+      }
+      for (const link of links) {
+        const active = link.dataset.slug === current;
+        link.classList.toggle('text-tempest', active);
+        link.classList.toggle('border-tempest', active);
+        link.classList.toggle('text-muted-foreground', !active);
+        link.classList.toggle('border-transparent', !active);
+      }
+    }
+
     window.addEventListener('scroll', highlight, { passive: true });
     highlight();
   }
+
+  setupToc();
+  document.addEventListener('astro:page-load', setupToc);
 </script>

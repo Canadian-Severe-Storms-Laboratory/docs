@@ -84,6 +84,8 @@ const cleanCurrent = currentPath.replace(/\/$/, '') || '/docs';
     const backdrop = document.getElementById('sidebar-backdrop');
 
     if (!toggle || !sidebar || !backdrop) return;
+    if (toggle.dataset.bound) return;
+    toggle.dataset.bound = 'true';
 
     function setOpen(open: boolean) {
       sidebar!.classList.toggle('-translate-x-full', !open);
@@ -96,7 +98,13 @@ const cleanCurrent = currentPath.replace(/\/$/, '') || '/docs';
       setOpen(sidebar.classList.contains('-translate-x-full'));
     });
     backdrop.addEventListener('click', () => setOpen(false));
+
+    // Close mobile sidebar when navigating via any link in the sidebar
+    sidebar.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
   }
 
   setupMobileSidebar();
+  document.addEventListener('astro:page-load', setupMobileSidebar);
 </script>

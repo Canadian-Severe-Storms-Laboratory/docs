@@ -4,6 +4,7 @@ import { Search } from 'lucide-astro';
 
 <div
   id="search-dialog"
+  transition:persist="search-modal"
   class="fixed inset-0 z-50 hidden items-start justify-center bg-black/50 p-4 pt-16 backdrop-blur-sm sm:pt-24"
   role="dialog"
   aria-modal="true"
@@ -145,7 +146,12 @@ import { Search } from 'lucide-astro';
 
   const isOpen = () => !dialog.classList.contains('hidden');
 
-  document.querySelectorAll('[data-search-trigger]').forEach((el) => el.addEventListener('click', open));
+  document.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement)?.closest('[data-search-trigger]')) {
+      open();
+    }
+  });
+
   dialog.addEventListener('click', (e) => {
     if (e.target === dialog) close();
   });

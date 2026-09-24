@@ -70,37 +70,44 @@ const { title, description, group, headings = [], prev, next, currentPath, group
 </BaseLayout>
 
 <script>
-  // Anchor links on section headings.
-  document.querySelectorAll<HTMLHeadingElement>('.docs-prose h2[id], .docs-prose h3[id]').forEach((heading) => {
-    const anchor = document.createElement('a');
-    anchor.href = `#${heading.id}`;
-    anchor.className = 'heading-anchor';
-    anchor.setAttribute('aria-label', 'Link to this section');
-    heading.appendChild(anchor);
-  });
-
-  // Copy buttons on standalone code blocks (<CodeGroup> has its own).
-  document.querySelectorAll<HTMLPreElement>('.docs-prose pre').forEach((pre) => {
-    if (pre.closest('.code-group')) return;
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'code-block';
-    pre.replaceWith(wrapper);
-    wrapper.appendChild(pre);
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'code-copy';
-    button.textContent = 'Copy';
-    button.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
-        button.textContent = 'Copied';
-        setTimeout(() => (button.textContent = 'Copy'), 1500);
-      } catch {
-        button.textContent = 'Failed';
-      }
+  function setupDocs() {
+    // Anchor links on section headings.
+    document.querySelectorAll<HTMLHeadingElement>('.docs-prose h2[id], .docs-prose h3[id]').forEach((heading) => {
+      if (heading.querySelector('.heading-anchor')) return;
+      const anchor = document.createElement('a');
+      anchor.href = `#${heading.id}`;
+      anchor.className = 'heading-anchor';
+      anchor.setAttribute('aria-label', 'Link to this section');
+      heading.appendChild(anchor);
     });
-    wrapper.appendChild(button);
-  });
+
+    // Copy buttons on standalone code blocks (<CodeGroup> has its own).
+    document.querySelectorAll<HTMLPreElement>('.docs-prose pre').forEach((pre) => {
+      if (pre.closest('.code-group')) return;
+      if (pre.parentElement?.classList.contains('code-block')) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-block';
+      pre.replaceWith(wrapper);
+      wrapper.appendChild(pre);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'code-copy';
+      button.textContent = 'Copy';
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
+          button.textContent = 'Copied';
+          setTimeout(() => (button.textContent = 'Copy'), 1500);
+        } catch {
+          button.textContent = 'Failed';
+        }
+      });
+      wrapper.appendChild(button);
+    });
+  }
+
+  setupDocs();
+  document.addEventListener('astro:page-load', setupDocs);
 </script>

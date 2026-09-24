@@ -32,23 +32,31 @@ const { labels, class: className = '' } = Astro.props;
 </div>
 
 <script>
-  document.querySelectorAll<HTMLElement>('.mint-tabs').forEach((container) => {
-    const triggers = [...container.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] > .tab-trigger')];
-    const panels = [...container.querySelectorAll<HTMLElement>(':scope > .tabs-content > .tab-panel')];
+  function setupTabs() {
+    document.querySelectorAll<HTMLElement>('.mint-tabs').forEach((container) => {
+      if (container.dataset.initialized) return;
+      container.dataset.initialized = 'true';
 
-    triggers.forEach((trigger, i) => {
-      trigger.addEventListener('click', () => {
-        triggers.forEach((t, idx) => {
-          const selected = idx === i;
-          t.setAttribute('aria-selected', String(selected));
-          t.classList.toggle('border-tempest', selected);
-          t.classList.toggle('font-medium', selected);
-          t.classList.toggle('text-foreground', selected);
-          t.classList.toggle('border-transparent', !selected);
-          t.classList.toggle('text-muted-foreground', !selected);
+      const triggers = [...container.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] > .tab-trigger')];
+      const panels = [...container.querySelectorAll<HTMLElement>(':scope > .tabs-content > .tab-panel')];
+
+      triggers.forEach((trigger, i) => {
+        trigger.addEventListener('click', () => {
+          triggers.forEach((t, idx) => {
+            const selected = idx === i;
+            t.setAttribute('aria-selected', String(selected));
+            t.classList.toggle('border-tempest', selected);
+            t.classList.toggle('font-medium', selected);
+            t.classList.toggle('text-foreground', selected);
+            t.classList.toggle('border-transparent', !selected);
+            t.classList.toggle('text-muted-foreground', !selected);
+          });
+          panels.forEach((p, idx) => p.classList.toggle('hidden', idx !== i));
         });
-        panels.forEach((p, idx) => p.classList.toggle('hidden', idx !== i));
       });
     });
-  });
+  }
+
+  setupTabs();
+  document.addEventListener('astro:page-load', setupTabs);
 </script>
