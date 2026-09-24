@@ -1,44 +1,47 @@
 ---
-title: "Welcome to CSSL Weather Intelligence"
-description: "The central developer platform and documentation for the Canadian Severe Storms Laboratory Weather Intelligence portal, Cyclone-serve forecast engines, and Raindrop observation APIs."
+title: "CSSL Weather Intelligence docs"
+sidebarTitle: "Introduction"
+description: "Guides and API reference for the Canadian Severe Storms Laboratory's weather portal and the services behind it."
 group: "Getting Started"
 order: 1
-icon: "sparkles"
-badge: "v2026.1"
+icon: "book-open"
 ---
 
-import Card from '@/components/mdx/Card.astro';
-import CardGroup from '@/components/mdx/CardGroup.astro';
-import Callout from '@/components/mdx/Callout.astro';
+import { Card, CardGroup } from '@/components/mdx';
 
-The **Canadian Severe Storms Laboratory (CSSL)** Weather Intelligence Portal is Canada's central repository and access point for high-resolution surface weather observations, numerical forecast model tiles, and severe storm analytics.
+The Canadian Severe Storms Laboratory (CSSL) at Western University runs three public services:
 
-<Callout type="tip" title="CSSL Weather Intelligence Environment">
-  Live production maps and high-frequency real-time observation feeds are available at [weather.cssl.ca](https://weather.cssl.ca). All API keys can be managed via the Weather Intelligence settings dashboard.
-</Callout>
+- **[Weather Intelligence](https://weather.cssl.ca)** is a web map of surface observations, weather alerts, radar, satellite and model forecasts for Canada and the northern United States.
+- **Raindrop** (`raindrop.cssl.ca`) is a REST API for weather station observations and Environment and Climate Change Canada (ECCC) alerts.
+- **Cyclone** (`cyclone.cssl.ca`) serves gridded data: numerical weather model output, radar volumes, satellite imagery and lightning.
 
-## Explore by Topic
-
-Jump straight into the documentation for our core sub-systems, services, and APIs.
+Weather Intelligence is built on the two APIs. These docs cover how to call them and how the pieces fit together.
 
 <CardGroup cols={2}>
-  <Card title="Quickstart Guide" icon="rocket" href="/docs/quickstart">
-    Set up your API credentials, authenticate requests, and query live weather stations across Canada in minutes.
+  <Card title="Quickstart" icon="rocket" href="/docs/quickstart">
+    Fetch station observations and a model forecast. No account needed.
   </Card>
-  <Card title="System Architecture" icon="layers" href="/docs/architecture/overview">
-    Deep-dive into the Raindrop observation backend, Cyclone-serve model tiling engine, and Deck.gl rendering layer.
+  <Card title="Authentication" icon="key" href="/docs/authentication">
+    Plans, API keys, CSSL account tokens, and what each one unlocks.
   </Card>
-  <Card title="API Reference" icon="code" href="/docs/api/overview">
-    Comprehensive REST API documentation for station metadata, high-frequency observations, and forecast parameters.
+  <Card title="Raindrop API" icon="database" href="/docs/raindrop/overview">
+    Stations, observations, quality flags and alerts.
   </Card>
-  <Card title="UI Components Showcase" icon="zap" href="/docs/components/showcase">
-    Explore the Mintlify-styled documentation components including CardGroups, Steps, Tabs, and ParamFields.
+  <Card title="Cyclone API" icon="layers" href="/docs/cyclone/overview">
+    Model runs, data tiles and point forecasts.
   </Card>
 </CardGroup>
 
-## Core Capabilities
+## What's available
 
-- **Dense Multi-Network Observations**: Ingests observations across Environment and Climate Change Canada (ECCC), NOAA, DWD, provincial mesonet networks, and CSSL research stations.
-- **Tiled Cyclone Model Grids**: High-speed raster tiles for HRRR, RAP, RDPS, and GDPS forecast products with rotated and Lambert conformal projections.
-- **Sub-Minute Radar & Lightning Overlay**: WebGL-accelerated visualization powered by Deck.gl and MapLibre.
-- **CAP Alert Streaming**: Real-time Common Alerting Protocol warnings, watches, and advisories mapped with geospatial geometry.
+|  | Raindrop | Cyclone |
+| --- | --- | --- |
+| **Data** | 4,000+ stations from ECCC, NAV CANADA, provincial and territorial networks, Hydro-Québec, UPEI, HailSTORM and US METAR sites; ECCC weather alerts | HRDPS, RDPS, HRRR, RRFS, NBM, GFS and ICON forecasts; ECCC and NEXRAD radar; GOES-19 infrared; MRMS hail size and lightning |
+| **Formats** | JSON, GeoJSON, CSV | Binary data tiles, JSON, GeoJSON |
+| **Without an account** | Every read endpoint, limited to a 7-day window | The model catalog, RDPS, GOES-19 and MRMS |
+
+All times in both APIs are UTC.
+
+## Getting help
+
+For questions about data access or accounts, email [nmp@uwo.ca](mailto:nmp@uwo.ca). To report a problem with these docs, [open an issue on GitHub](https://github.com/Canadian-Severe-Storms-Laboratory/docs/issues).

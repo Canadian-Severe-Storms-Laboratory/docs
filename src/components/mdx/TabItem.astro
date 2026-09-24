@@ -1,6 +1,6 @@
 ---
+// One panel of <Tabs>. The first panel should set `default`.
 interface Props {
-  value?: string;
   default?: boolean;
   class?: string;
 }
@@ -8,6 +8,6 @@ interface Props {
 const { default: isDefault = false, class: className = '' } = Astro.props;
 ---
 
-<div class={`tab-panel ${isDefault ? '' : 'hidden'} ${className}`}>
+<div role="tabpanel" class={`tab-panel docs-prose ${isDefault ? '' : 'hidden'} ${className}`}>
   <slot />
 </div>

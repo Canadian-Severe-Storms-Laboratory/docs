@@ -1,0 +1,149 @@
+---
+title: "Observations"
+description: "Time series for a single station, units, averaging intervals and quality flags."
+group: "Raindrop API"
+order: 3
+icon: "thermometer"
+---
+
+import { Callout, Endpoint, ParamField } from '@/components/mdx';
+
+## Series
+
+Every value Raindrop stores belongs to a **series**: one variable at one station, measured one way. The `types` array in [station details](/docs/raindrop/stations#station-details) lists a station's series. Each one has:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Series ID. Readings refer to it as `typeId`. |
+| `name` | Variable name, such as `airTemperature`. See [Units](#units) for the full list. |
+| `intervalType` | `Instantaneous`, `Average`, `Cumulative`, `Max`, `Min`, `Median` or `Unknown` |
+| `intervalMinutes` | Length of the averaging or accumulation period. It's `0` for instantaneous values. |
+| `reportedUnit` | Unit of the values |
+| `calculated` | `true` if Raindrop derived the value (for example dew point from temperature and humidity) instead of receiving it |
+| `groupBucketName` | Bucket label for grouped series, such as hail-size bins. Otherwise empty. |
+| `firstAppearance` | When the series first reported |
+
+One station often has several series for the same variable. The NAV CANADA station at London, for example, reports `windSpeed10m` as both a 2-minute and a 10-minute average.
+
+## Time series
+
+<Endpoint method="POST" base="/api/v1" path="/observations/series" />
+
+Returns the readings of one variable at one station between `start` and `end`. The window is subject to your plan's [lookback](/docs/raindrop/overview#time-windows).
+
+<ParamField query="start" type="datetime" required>
+  Start of the window.
+</ParamField>
+
+<ParamField query="end" type="datetime" required>
+  End of the window.
+</ParamField>
+
+<ParamField body="stationId" type="string" required>
+  Station ID.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Variable name, such as `airTemperature`. Matching is exact and case-sensitive.
+</ParamField>
+
+<ParamField body="intervalType" type="string">
+  Pick one series by interval type.
+</ParamField>
+
+<ParamField body="intervalMinutes" type="integer">
+  Pick one series by interval length.
+</ParamField>
+
+<ParamField body="calculated" type="boolean">
+  Only derived values (`true`) or only reported values (`false`).
+</ParamField>
+
+<Callout type="warning" title="Pin the interval">
+  If a station has more than one series for `name` and you don't set `intervalType` and `intervalMinutes`, readings from all of them are mixed together. The response's top-level fields then describe only the first series.
+</Callout>
+
+```bash
+curl -s --compressed -X POST \
+  "https://raindrop.cssl.ca/api/v1/observations/series?start=2026-09-24T12:00:00Z&end=2026-09-24T15:00:00Z" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stationId": "12efaad4-2ddd-42c1-bba2-0c00031e4a98",
+    "name": "windSpeed10m",
+    "intervalType": "Average",
+    "intervalMinutes": 10
+  }'
+```
+
+```json
+{
+  "name": "windSpeed10m",
+  "prettyName": "Wind Speed (10m)",
+  "reportedUnit": "km/h",
+  "intervalType": "Average",
+  "intervalMinutes": 10,
+  "firstAppearance": "2024-11-23T00:00:00Z",
+  "readings": [
+    {
+      "timestamp": "2026-09-24T12:00:00Z",
+      "value": 9,
+      "quality": { "baseQuality": "Good", "reasonQuality": "None" },
+      "calculated": false,
+      "groupBucketName": ""
+    }
+  ]
+}
+```
+
+Returns `404` if the station has no matching readings in the window.
+
+## Units
+
+<Endpoint method="GET" base="/api/v1" path="/observations/units" />
+
+Returns the unit each variable is stored and served in, as an object from variable name to unit. The list only changes with a deployment, so fetch it once and cache it.
+
+| Unit | Variables |
+| --- | --- |
+| °C | `airTemperature`, `dewPointTemperature`, `wetBulbTemperature`, `heatIndex`, `windChill`, `seaSurfaceTemperature`, `seaSurfaceTemperature1m`, `subsurfaceTemperature` |
+| km/h | `windSpeed`, `windSpeed10m`, `windGust`, `windGust10m` |
+| ° | `windDirection`, `waveDirection` |
+| hPa | `barometricPressure`, `mslp` |
+| % | `relativeHumidity` |
+| mm | `precipitation`, `rainfall`, `snowfall` |
+| mm/h | `precipitationRate` |
+| cm | `snowDepth` |
+| km | `visibility` |
+| m | `waveHeight`, `waveHeightMax`, `ceilingHeight`, `stationHeight` |
+| W/m² | `solarRadiation`, `avgGlobalSolarRadiation`, `reflectedShortwaveRadiation` |
+| kJ/m² | `cumulativeGlobalSolarRadiation` |
+| (none) | `uvIndex`, `fireWeatherIndex` |
+
+A few sources report units that can't be converted unambiguously. Those values are stored as reported, so a series' own `reportedUnit` is the final word.
+
+## Quality flags
+
+Every reading carries a `quality` object with two codes:
+
+```json
+{ "baseQuality": "Good", "reasonQuality": "None" }
+```
+
+`baseQuality` is the verdict. From worst to best:
+
+| Code | Meaning |
+| --- | --- |
+| `Suppressed` | Withheld by the source |
+| `Missing` | No valid value |
+| `Error` | Physically impossible, such as outside the instrument's range |
+| `Doubtful` | Possible but unlikely for the time of year |
+| `Inconsistent` | Disagrees with related values, such as station pressure above sea-level pressure |
+| `Instrumentation` | Looks like a sensor fault: a stuck reading or an implausible jump |
+| `Good` | Passed every check that was run |
+| `Unknown` | Not checked |
+
+`Unknown` means nobody has an opinion yet. It isn't a failure; it ranks above `Good` so it never sorts as the worst code.
+
+`reasonQuality` says which check tripped: `Range`, `Change`, `Increase`, `Decrease`, `Inert`, `Difference`, `GreaterThan`, `LessThan`, `Disagree`, `AverageInconsistent`, `ValueType` or `Missing`. It's `None` when nothing tripped and `Unknown` when the source gave no reason.
+
+Readings from ECCC's feed arrive with ECCC's own verdict. Raindrop runs its own checks on any reading that isn't already marked `Good`, which covers every other network. Derived values take the worst quality of their inputs. For details, see [Quality control](/docs/architecture/data-sources#quality-control).

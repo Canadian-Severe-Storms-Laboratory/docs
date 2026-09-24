@@ -1,0 +1,58 @@
+---
+// How data moves from upstream providers, through CSSL's services, to clients.
+import { ArrowDown } from 'lucide-astro';
+
+const tiers = [
+  {
+    label: 'Upstream',
+    nodes: [
+      { title: 'ECCC', body: 'SWOB observations, CAP alerts and thunderstorm outlooks from MSC Datamart, plus HRDPS, RDPS and radar volumes' },
+      { title: 'NOAA', body: 'Aviation Weather Center METARs, plus HRRR, RRFS, NBM, GFS, MRMS, GOES-19 and NEXRAD on AWS' },
+      { title: 'Others', body: 'Hydro-Québec, UPEI, HailSTORM, DWD ICON, Nadocast, and NTP and NHP event reports' },
+    ],
+  },
+  {
+    label: 'CSSL services',
+    nodes: [
+      { title: 'Raindrop', host: 'raindrop.cssl.ca', body: 'Stations, observations, alerts and outlooks', accent: true },
+      { title: 'Cyclone', host: 'cyclone.cssl.ca', body: 'Model fields, soundings, radar volumes, satellite and lightning', accent: true },
+      { title: 'Auth', host: 'auth.cssl.ca', body: 'CSSL accounts and the access tokens both APIs accept' },
+    ],
+  },
+  {
+    label: 'Clients',
+    nodes: [
+      { title: 'Weather Intelligence', host: 'weather.cssl.ca', body: 'The web portal', accent: true },
+      { title: 'Your application', body: 'Anything that calls the public APIs' },
+    ],
+  },
+];
+---
+
+<figure class="not-prose my-8 rounded-2xl border border-border/80 bg-muted/20 p-4 sm:p-6" aria-label="System overview diagram">
+  {tiers.map((tier, i) => (
+    <>
+      {i > 0 && (
+        <div class="flex justify-center py-2 text-muted-foreground/60" aria-hidden="true">
+          <ArrowDown class="h-4 w-4" />
+        </div>
+      )}
+      <div>
+        <p class="mb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{tier.label}</p>
+        <div class={`grid gap-2 ${tier.nodes.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+          {tier.nodes.map((node) => (
+            <div
+              class={`rounded-xl border bg-background px-3.5 py-3 ${
+                node.accent ? 'border-tempest/35' : 'border-border/80'
+              }`}
+            >
+              <p class="text-sm font-semibold text-foreground">{node.title}</p>
+              {node.host && <p class="font-mono text-xs text-tempest">{node.host}</p>}
+              <p class="mt-1 text-xs leading-relaxed text-muted-foreground">{node.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  ))}
+</figure>

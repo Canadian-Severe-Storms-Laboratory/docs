@@ -1,0 +1,100 @@
+---
+title: "Cyclone API"
+sidebarTitle: "Overview"
+description: "Models and sources, how runs and forecast hours are addressed, caching and errors."
+group: "Cyclone API"
+order: 1
+icon: "server"
+---
+
+import { Callout } from '@/components/mdx';
+
+Cyclone serves gridded weather data: numerical weather prediction (NWP) output, radar volumes, satellite imagery and lightning. It's the data source for every raster layer in Weather Intelligence.
+
+```text
+https://cyclone.cssl.ca
+```
+
+Every endpoint is `GET`. There's no version prefix.
+
+## Endpoints
+
+| Endpoint | Returns |
+| --- | --- |
+| [`/models`](/docs/cyclone/models#models) | Every model with its forecast-hour axis |
+| [`/models/coverage`](/docs/cyclone/models#coverage) | Each model's footprint, as GeoJSON |
+| [`/models/{model}/runs`](/docs/cyclone/models#runs) | Available runs, newest first |
+| [`/models/{model}/products`](/docs/cyclone/models#products) | Fields, units and tile encoding |
+| [`/models/{model}/products/{product}/data/{z}/{x}/{y}`](/docs/cyclone/tiles) | A 256×256 map tile of values |
+| [`/models/{model}/point`](/docs/cyclone/point-queries#one-point) | Several fields at one grid point |
+| [`/models/{model}/series`](/docs/cyclone/point-queries#time-series) | Every forecast hour at one grid point |
+| [`/capabilities`](/docs/authentication#checking-access) | What your credential can access |
+
+Cyclone also serves single-site radar volumes under `/radar` (Pro plan). They use a binary format that isn't documented yet.
+
+## Models
+
+| ID | Model | Provider | Grid | Forecast hours |
+| --- | --- | --- | --- | --- |
+| `hrdps` | HRDPS | ECCC | 2.5 km, Canada | 0–48, hourly |
+| `rdps` | RDPS | ECCC | 10 km, North America | 0–84, hourly |
+| `hrrr` | HRRR | NOAA | 3 km, contiguous US | 0–48, hourly |
+| `rrfs-na` | RRFS | NOAA | 13 km, Canada and northern US | 0–84, hourly |
+| `rrfs-na-3km` | RRFS | NOAA | 3 km, Canada and northern US | 0–60 every 3 h, then to 84 every 6 h |
+| `nbm` | NBM | NOAA | 2.5 km, contiguous US | 1–36, hourly |
+| `gfs` | GFS | NOAA | 0.25°, global | 0–120 hourly, then to 384 every 3 h |
+| `icon` | ICON | DWD | 0.125°, global | 0–78 hourly, then to 180 every 3 h |
+
+Cyclone also serves recent observations through the same interface, with one run per UTC day:
+
+| ID | Source | Time steps |
+| --- | --- | --- |
+| `goes-east` | GOES-19 infrared (bands 7, 9 and 13) | Every 10 minutes |
+| `mrms-mesh-30min` | MRMS Maximum Expected Size of Hail (MESH), 30-minute maximum | Every 30 minutes |
+| `mrms-nldn-5min`, `mrms-nldn-30min` | MRMS lightning density from NLDN | Every 5 or 30 minutes |
+
+Access varies by model. See [Authentication](/docs/authentication#plans), or call `/capabilities`. `/models` always lists everything the server carries, whether or not you can read it.
+
+## Runs and hours
+
+Data requests take a **run** and an **hour**.
+
+- **`run`** is the model's initialization time, in the form `YYYYMMDDTHHMMSSZ`, such as `20260924T120000Z`. List valid values with [`/runs`](/docs/cyclone/models#runs). Cyclone keeps only the last few runs of each model, so don't construct run stamps yourself.
+- **`hour`** is an **index** into the model's `forecast_hour_axis`, not a number of hours.
+
+For hourly models that start at hour 0, the two are the same. For the others they aren't. NBM's axis starts at 1, so index 0 is forecast hour 1. GFS goes 3-hourly after hour 120, so index 130 is forecast hour 150. The valid time is `run + forecast_hour_axis[hour]` hours. [`/models`](/docs/cyclone/models#models) returns each model's axis.
+
+For observation sources, each run is a UTC day and the axis counts **minutes** since midnight.
+
+A forecast run appears in `/runs` only once every hour has been ingested and processed. An observation day appears as soon as its first time step arrives, and fills in through the day.
+
+## Caching
+
+Anything addressed by a specific run never changes. That covers data tiles and point and series queries, which are served with `Cache-Control: public, max-age=31536000, immutable`. Cache them indefinitely. Catalog endpoints (`/models`, `/runs` and `/products`) aren't cached; poll them to find new runs.
+
+Binary responses are large, about 128 KB per tile, so send `Accept-Encoding: gzip`. Browsers and most HTTP libraries do this automatically.
+
+## Browser access (CORS)
+
+Browsers can only call Cyclone from `*.cssl.ca` sites. If you're building a web app on another domain, make the requests from your server.
+
+## Errors
+
+Errors are JSON objects with a message and a stable code:
+
+```json
+{ "error": "hour 999 out of range (array has 85 hours)", "code": "hour_out_of_range" }
+```
+
+| Status | Meaning |
+| --- | --- |
+| `400` | Malformed request, such as a bad run stamp or passing both `run` and `time` |
+| `401`, `403` | Missing credential, or no access. See [Authentication](/docs/authentication#when-a-request-is-refused). |
+| `418` | The data doesn't exist: an unknown product, an hour outside the axis, or a tile with nothing in it |
+| `422` | The product can't be served as tiles. Use [point queries](/docs/cyclone/point-queries) instead. |
+| `503` | Server busy. Retry after the `Retry-After` delay. |
+| `504` | The request took longer than 30 seconds |
+
+<Callout type="note" title="418 means empty">
+  Cyclone answers `418`, not `404`, when there's no data for the tile, hour or product you asked for. When drawing a map, treat it as an empty tile rather than a failure.
+</Callout>

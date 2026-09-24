@@ -1,6 +1,6 @@
 ---
-import { Check, Copy } from 'lucide-astro';
-
+// Tabbed code blocks. Each child fence becomes a tab, labelled by its
+// `title="…"` meta or, failing that, its language.
 interface Props {
   class?: string;
 }
@@ -8,103 +8,77 @@ interface Props {
 const { class: className = '' } = Astro.props;
 ---
 
-<div class={`code-group my-6 rounded-xl border border-border/80 bg-[#111114] text-white overflow-hidden not-prose ${className}`}>
-  <div class="code-group-header flex items-center justify-between border-b border-white/10 bg-[#18181c] px-3 py-2">
-    <div class="code-group-tabs flex items-center gap-1 overflow-x-auto text-xs font-mono">
-      <!-- Tabs will be populated dynamically from pre elements or data-titles -->
-    </div>
-    <button
-      type="button"
-      class="copy-button flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-      title="Copy code"
-    >
-      <Copy class="copy-icon h-3.5 w-3.5" />
-      <Check class="check-icon hidden h-3.5 w-3.5 text-emerald-400" />
-      <span class="copy-text text-[11px]">Copy</span>
+<div class={`code-group not-prose my-6 overflow-hidden rounded-xl border border-border/80 bg-[var(--code-bg)] ${className}`}>
+  <div class="flex items-center justify-between gap-2 border-b border-white/10 pr-2">
+    <div class="code-group-tabs flex min-w-0 items-center overflow-x-auto overflow-y-hidden px-2 text-xs [scrollbar-width:none]" role="tablist"></div>
+    <button type="button" class="code-copy-inline shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white">
+      Copy
     </button>
   </div>
-  <div class="code-group-content [&>pre]:!m-0 [&>pre]:!border-none [&>pre]:!rounded-none [&>pre]:!bg-transparent">
+  <div class="code-group-content [&>pre]:!m-0 [&>pre]:!rounded-none [&>pre]:!border-0">
     <slot />
   </div>
 </div>
 
 <script>
-  function setupCodeGroups() {
-    document.querySelectorAll('.code-group').forEach((group) => {
-      const tabsContainer = group.querySelector('.code-group-tabs');
-      const pres = group.querySelectorAll<HTMLPreElement>('.code-group-content pre');
-      const copyBtn = group.querySelector('.copy-button');
-      const copyIcon = group.querySelector('.copy-icon');
-      const checkIcon = group.querySelector('.check-icon');
-      const copyText = group.querySelector('.copy-text');
+  const LANGUAGE_LABELS: Record<string, string> = {
+    bash: 'Shell',
+    sh: 'Shell',
+    shell: 'Shell',
+    js: 'JavaScript',
+    javascript: 'JavaScript',
+    ts: 'TypeScript',
+    typescript: 'TypeScript',
+    py: 'Python',
+    python: 'Python',
+    json: 'JSON',
+    http: 'HTTP',
+    csv: 'CSV',
+  };
 
-      if (!tabsContainer || pres.length === 0) return;
+  document.querySelectorAll<HTMLElement>('.code-group').forEach((group) => {
+    const tabs = group.querySelector('.code-group-tabs')!;
+    const pres = [...group.querySelectorAll<HTMLPreElement>('.code-group-content > pre')];
+    const copy = group.querySelector<HTMLButtonElement>('.code-copy-inline')!;
+    let active = 0;
 
-      tabsContainer.innerHTML = '';
-      let activeIndex = 0;
+    const buttons = pres.map((pre, i) => {
+      const lang = pre.dataset.language ?? '';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('role', 'tab');
+      button.textContent = pre.dataset.title ?? LANGUAGE_LABELS[lang] ?? lang.toUpperCase();
+      button.className =
+        'code-tab -mb-px cursor-pointer border-b-2 px-2.5 py-2.5 whitespace-nowrap transition-colors';
+      button.addEventListener('click', () => show(i));
+      tabs.appendChild(button);
+      return button;
+    });
 
-      pres.forEach((pre, idx) => {
-        // Hide all except first
-        if (idx !== 0) {
-          pre.style.display = 'none';
-        }
-
-        // Determine title
-        const lang = pre.getAttribute('data-language') || 'code';
-        const title = pre.getAttribute('data-title') || lang.toUpperCase();
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = title;
-        btn.className = `px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
-          idx === 0 ? 'bg-white/15 text-white font-medium' : 'text-white/60 hover:text-white'
-        }`;
-
-        btn.addEventListener('click', () => {
-          activeIndex = idx;
-          tabsContainer.querySelectorAll('button').forEach((b, bIdx) => {
-            if (bIdx === idx) {
-              b.className = 'px-2.5 py-1 rounded text-xs transition-colors cursor-pointer bg-white/15 text-white font-medium';
-            } else {
-              b.className = 'px-2.5 py-1 rounded text-xs transition-colors cursor-pointer text-white/60 hover:text-white';
-            }
-          });
-
-          pres.forEach((p, pIdx) => {
-            p.style.display = pIdx === idx ? 'block' : 'none';
-          });
-        });
-
-        tabsContainer.appendChild(btn);
+    function show(i: number) {
+      active = i;
+      pres.forEach((pre, idx) => (pre.hidden = idx !== i));
+      buttons.forEach((b, idx) => {
+        const selected = idx === i;
+        b.setAttribute('aria-selected', String(selected));
+        b.classList.toggle('border-tempest', selected);
+        b.classList.toggle('text-white', selected);
+        b.classList.toggle('border-transparent', !selected);
+        b.classList.toggle('text-white/55', !selected);
       });
+    }
 
-      // Setup copy button
-      if (copyBtn) {
-        copyBtn.addEventListener('click', async () => {
-          const activePre = pres[activeIndex];
-          if (!activePre) return;
-          const code = activePre.querySelector('code')?.innerText || activePre.innerText;
-
-          try {
-            await navigator.clipboard.writeText(code);
-            if (copyIcon && checkIcon && copyText) {
-              copyIcon.classList.add('hidden');
-              checkIcon.classList.remove('hidden');
-              copyText.textContent = 'Copied!';
-              setTimeout(() => {
-                copyIcon.classList.remove('hidden');
-                checkIcon.classList.add('hidden');
-                copyText.textContent = 'Copy';
-              }, 2000);
-            }
-          } catch (e) {
-            console.error('Failed to copy', e);
-          }
-        });
+    copy.addEventListener('click', async () => {
+      const pre = pres[active];
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
+        copy.textContent = 'Copied';
+        setTimeout(() => (copy.textContent = 'Copy'), 1500);
+      } catch {
+        copy.textContent = 'Failed';
       }
     });
-  }
 
-  setupCodeGroups();
-  document.addEventListener('astro:page-load', setupCodeGroups);
+    show(0);
+  });
 </script>

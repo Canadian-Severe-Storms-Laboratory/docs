@@ -1,26 +1,19 @@
 ---
 interface Props {
   title: string;
-  class?: string;
 }
 
-const { title, class: className = '' } = Astro.props;
+const { title } = Astro.props;
 ---
 
-<div class={`relative [counter-increment:step] pb-2 ${className}`}>
-  <!-- Number indicator pill positioned on left border line -->
+<div class="step relative pb-8 pl-10 last:pb-0">
   <span
-    class="absolute -left-[42px] top-0 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-xs font-semibold text-foreground shadow-xs ring-4 ring-background"
+    class="step-number absolute top-0 left-0 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background text-xs font-semibold text-foreground"
     aria-hidden="true"
-  >
-    <span class="text-tempest font-bold text-[11px] [content:counter(step)] before:[content:counter(step)]"></span>
-  </span>
-
-  <h3 class="mb-2 text-base font-semibold tracking-tight text-foreground">
-    {title}
-  </h3>
-
-  <div class="space-y-3 text-sm leading-relaxed text-foreground/80 docs-prose">
+  ></span>
+  <span class="step-line absolute top-8 bottom-1 left-[13.5px] w-px bg-border" aria-hidden="true"></span>
+  <h3 class="mb-2 pt-0.5 text-base font-semibold tracking-tight text-foreground">{title}</h3>
+  <div class="docs-prose text-[15px]">
     <slot />
   </div>
 </div>

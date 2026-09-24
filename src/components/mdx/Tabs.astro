@@ -1,67 +1,54 @@
 ---
+// Tabbed content. Pass `labels` and one <TabItem> per label, in order.
 interface Props {
-  labels?: string[];
+  labels: string[];
   class?: string;
 }
 
-const { labels = [], class: className = '' } = Astro.props;
-const tabsId = `tabs-${Math.random().toString(36).substring(2, 9)}`;
+const { labels, class: className = '' } = Astro.props;
 ---
 
-<div class={`mint-tabs my-6 rounded-xl border border-border/80 bg-card overflow-hidden not-prose ${className}`} id={tabsId}>
-  {labels.length > 0 && (
-    <div class="flex items-center gap-1 border-b border-border/80 bg-muted/30 px-3 pt-2">
-      {labels.map((label, index) => (
-        <button
-          type="button"
-          class={`tab-trigger px-3.5 py-1.5 text-xs font-medium rounded-t-md transition-colors cursor-pointer border-b-2 -mb-[1px] ${
-            index === 0
-              ? 'border-tempest text-tempest font-semibold bg-background/50'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-          data-tab-index={index}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  )}
-
-  <div class="tabs-content p-4">
+<div class={`mint-tabs not-prose my-6 ${className}`}>
+  <div class="flex items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-border/80 [scrollbar-width:none]" role="tablist">
+    {labels.map((label, index) => (
+      <button
+        type="button"
+        role="tab"
+        aria-selected={index === 0 ? 'true' : 'false'}
+        data-tab-index={index}
+        class={`tab-trigger -mb-px cursor-pointer border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+          index === 0
+            ? 'border-tempest font-medium text-foreground'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        {label}
+      </button>
+    ))}
+  </div>
+  <div class="tabs-content pt-4">
     <slot />
   </div>
 </div>
 
 <script>
-  function setupTabs() {
-    document.querySelectorAll('.mint-tabs').forEach((container) => {
-      const triggers = container.querySelectorAll<HTMLButtonElement>('.tab-trigger');
-      const panels = container.querySelectorAll<HTMLElement>('.tab-panel');
+  document.querySelectorAll<HTMLElement>('.mint-tabs').forEach((container) => {
+    const triggers = [...container.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] > .tab-trigger')];
+    const panels = [...container.querySelectorAll<HTMLElement>(':scope > .tabs-content > .tab-panel')];
 
-      // If triggers exist in header
-      if (triggers.length > 0) {
-        triggers.forEach((trigger, idx) => {
-          trigger.addEventListener('click', () => {
-            triggers.forEach((t) => {
-              t.classList.remove('border-tempest', 'text-tempest', 'font-semibold', 'bg-background/50');
-              t.classList.add('border-transparent', 'text-muted-foreground');
-            });
-            trigger.classList.add('border-tempest', 'text-tempest', 'font-semibold', 'bg-background/50');
-            trigger.classList.remove('border-transparent', 'text-muted-foreground');
-
-            panels.forEach((p, pIdx) => {
-              if (pIdx === idx) {
-                p.classList.remove('hidden');
-              } else {
-                p.classList.add('hidden');
-              }
-            });
-          });
+    triggers.forEach((trigger, i) => {
+      trigger.addEventListener('click', () => {
+        triggers.forEach((t, idx) => {
+          const selected = idx === i;
+          t.setAttribute('aria-selected', String(selected));
+          t.classList.toggle('border-tempest', selected);
+          t.classList.toggle('font-medium', selected);
+          t.classList.toggle('text-foreground', selected);
+          t.classList.toggle('border-transparent', !selected);
+          t.classList.toggle('text-muted-foreground', !selected);
         });
-      }
+        panels.forEach((p, idx) => p.classList.toggle('hidden', idx !== i));
+      });
     });
-  }
-
-  setupTabs();
-  document.addEventListener('astro:page-load', setupTabs);
+  });
 </script>

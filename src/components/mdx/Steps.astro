@@ -6,6 +6,6 @@ interface Props {
 const { class: className = '' } = Astro.props;
 ---
 
-<div class={`steps-container relative my-8 ml-3 space-y-6 border-l border-border/80 pl-7 text-sm [counter-reset:step] not-prose ${className}`}>
+<div class={`steps not-prose my-8 ${className}`}>
   <slot />
 </div>

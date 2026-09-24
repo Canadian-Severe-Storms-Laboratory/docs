@@ -1,0 +1,97 @@
+---
+title: "Authentication"
+description: "What you can do without an account, what a plan or API key adds, and how to send credentials."
+group: "Getting Started"
+order: 3
+icon: "key"
+---
+
+import { Callout } from '@/components/mdx';
+
+You don't need credentials to read most data. Raindrop's station, observation and alert endpoints are open to anyone, as are Cyclone's model catalog and a few of its data sources. Credentials raise the limits and unlock the rest.
+
+## Plans
+
+Access is tiered by plan. Plans are attached to a CSSL account, and higher plans include everything below them.
+
+| | No account | Free | Pro | Commercial |
+| --- | --- | --- | --- | --- |
+| Raindrop observation window | 7 days | 7 days | 30 days | Unlimited |
+| Raindrop bulk CSV export | – | – | – | ✓ |
+| Cyclone RDPS, GOES-19, MRMS | ✓ | ✓ | ✓ | ✓ |
+| Other Cyclone models | – | ✓ | ✓ | ✓ |
+| Cyclone radar volumes | – | – | ✓ | ✓ |
+
+RDPS composite indices (SCP, STP, SHIP, lapse rates and mixing ratio) need a signed-in account for tiles and time series. Some Cyclone sources are also limited to members of particular organizations. The table shows the default policy. To see exactly what a credential can reach, ask the API (see [Checking access](#checking-access) below).
+
+## Credentials
+
+Both APIs read credentials from the `Authorization` header:
+
+```http
+Authorization: Bearer <credential>
+```
+
+Credentials in query strings or request bodies are ignored.
+
+### CSSL account tokens
+
+Signing in to [Weather Intelligence](https://weather.cssl.ca) gets you an access token from `auth.cssl.ca`. It's a signed JWT that carries your plan. Raindrop and Cyclone both accept it.
+
+- Browsers on a `*.cssl.ca` site send it automatically in the `cssl_at` cookie.
+- Other clients send it as a Bearer token.
+
+Tokens expire. The portal refreshes them for you, but there's currently no self-serve way to create a long-lived token for scripts. For automated access to gated Raindrop data, use an API key.
+
+### Raindrop API keys
+
+A Raindrop API key is an opaque string issued by a CSSL administrator. Keys can't be created self-serve; to request one, email [nmp@uwo.ca](mailto:nmp@uwo.ca).
+
+- Raindrop treats every API key as the **Commercial** plan.
+- Keys are issued either without an expiry or valid for one year.
+- **Keys work only on Raindrop.** Cyclone treats anything that isn't a JWT as anonymous.
+
+```bash
+curl -H "Authorization: Bearer $RAINDROP_API_KEY" \
+  "https://raindrop.cssl.ca/api/v1/capabilities"
+```
+
+## Checking access
+
+Each API has a `/capabilities` endpoint. It reports what the credential you send can do, and works with no credential too.
+
+```bash
+curl https://raindrop.cssl.ca/api/v1/capabilities
+curl https://cyclone.cssl.ca/capabilities
+```
+
+The response lists products by ID. Each has an `allowed` flag and the plan it `requires`:
+
+```json
+{
+  "products": {
+    "historical.bulk": { "allowed": false, "requires": "commercial", "requiresStanding": "none" }
+  },
+  "limits": {
+    "maxWindowMs": 604800000,
+    "maxReachMs": 604800000
+  }
+}
+```
+
+- **Compare plans by rank, not by name.** A `commercial` plan satisfies a `pro` requirement.
+- **A missing product ID means the deployment doesn't offer that product.** A product that's present with `"allowed": false` is gated.
+- **`requiresStanding: "cssl"` means the product is limited to CSSL staff.** No plan can buy it.
+- **In `limits`, `null` means unlimited.** Ignore keys you don't recognize.
+
+## When a request is refused
+
+| Status | Body | Meaning |
+| --- | --- | --- |
+| `401` | `{"reason": "…"}` | The token you sent was rejected. `reason` is one of `malformed`, `unknown_kid`, `bad_signature`, `expired` or `bad_claims`. Only `expired` is worth refreshing. |
+| `401` | empty | The endpoint needs a credential and you didn't send one. |
+| `403` | empty | Your credential is valid, but your plan or organization doesn't include this. Refreshing won't help. |
+
+<Callout type="warning" title="A bad token is worse than no token">
+  Raindrop treats an unrecognized API key as anonymous. An invalid or expired **JWT** is different: both APIs reject it with `401`, even on endpoints that don't require authentication. If your token expires mid-session, refresh it or stop sending it.
+</Callout>

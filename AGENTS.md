@@ -1,41 +1,35 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code and AI coding assistants when working with this repository.
+Guidance for Claude Code and other coding assistants working in this repository.
 
 ## What this is
 
-The public **Documentation** website for the Canadian Severe Storms Laboratory (CSSL) Weather Intelligence Portal, Raindrop observation APIs, and Cyclone-serve forecast engines.
+The public documentation site for the Canadian Severe Storms Laboratory (CSSL) Weather Intelligence portal and the Raindrop and Cyclone APIs. Built with **Astro 7** (Sätteri Markdown processor), **MDX**, **Bun** and **Tailwind CSS v4**, laid out like Mintlify and themed to match Weather Intelligence.
 
-Built with **Astro 5+**, **Bun**, and **Tailwind CSS v4**, styled after **Mintlify**, and themed to match **CSSL Weather Intelligence** (`~/projects/cssl/mesonet`).
+## Services documented
 
-## Canonical Services
+- `weather.cssl.ca`: the Weather Intelligence web portal. Always call it **Weather Intelligence**, not "Mesonet". Source: `~/mesonet`.
+- `raindrop.cssl.ca`: station observations, alerts and the station catalog (REST, `/api/v1`). Source: `~/raindrop`. The live OpenAPI document is at `https://raindrop.cssl.ca/openapi/v1.json`.
+- `cyclone.cssl.ca`: gridded data (model output, radar, satellite, lightning). Source: `~/cyclone` (Rust; routes in `crates/cyclone-app-core/src/serve_http.rs` and `crates/cyclone-serve/src/`).
 
-- `weather.cssl.ca`: Weather Intelligence web portal (always refer to as **Weather Intelligence**, not "Mesonet").
-- `raindrop.cssl.ca`: Station observation data and catalog APIs.
-- `cyclone.cssl.ca`: Raster data (radar composites + numerical weather model forecasts).
+**Every claim in the docs must be verifiable against those repos or the live APIs.** Local checkouts can lag `origin/main`, so fetch before relying on them. Use real, trimmed API responses in examples; don't invent values, parameters, client libraries or API keys.
 
 ## Commands
 
 ```bash
-bun install             # Install dependencies
-bun run dev             # Start dev server
-bun run build           # Build production static site
-bun run preview         # Preview built site
-bun run astro check     # Run typecheck diagnostics
+bun install
+bun run dev
+bun run build
+bun run preview
+bun run astro check
 ```
 
-## Architecture
+## Layout
 
-- **`src/content/docs/`**: MDX documentation pages powered by Astro Content Layer (`src/content.config.ts`).
-- **`src/layouts/`**: `BaseLayout.astro` (HTML shell, zero-flash dark mode script) and `DocsLayout.astro` (Mintlify 3-column layout).
-- **`src/components/`**: Mintlify UI components:
-  - `Header.astro`: Top navigation, search trigger, theme toggle, and CSSL logo.
-  - `Sidebar.astro`: Categorized doc links with icons, active indicator pills, and mobile drawer.
-  - `TableOfContents.astro`: Sticky right sidebar with scrollspy.
-  - `SearchModal.astro`: Keyboard-navigated search dialog (`⌘K`).
-  - `ThemeToggle.astro`: Zero-flash light/dark toggle.
-  - `mdx/`: `<Card>`, `<CardGroup>`, `<Callout>`, `<Steps>`, `<Step>`, `<Tabs>`, `<Accordion>`, `<CodeGroup>`, `<ParamField>`, `<ResponseField>`, `<Badge>`.
-- **`src/styles/global.css`**: Tailwind v4 configuration and CSS theme tokens from `mesonet`:
-  - `--color-tempest: #dc2929` (accent)
-  - `--color-sleet: #151518`, `--color-storm: #09090b`, `--color-blizzard: #f8f8f8`
-  - Dark / light HSL surface tokens and Mintlify prose styling.
+- `src/content/docs/`: MDX pages, loaded by `src/content.config.ts`. Frontmatter: `title`, `description`, `sidebarTitle`, `group`, `order`, `icon`, `badge`.
+- `src/lib/docs.ts`: URL helpers and sidebar group order.
+- `src/layouts/`: `BaseLayout.astro` (HTML shell, pre-paint theme script) and `DocsLayout.astro` (header, sidebar, content, table of contents; adds heading anchors and code copy buttons).
+- `src/components/`: `Header`, `Sidebar`, `TableOfContents`, `SearchModal` (⌘K, indexes titles and headings from `src/pages/api/search.json.ts`), `ThemeToggle`, `ServiceDiagram`, and `icons.ts` (icon names usable in frontmatter and cards).
+- `src/components/mdx/`: `Callout`, `Card`, `CardGroup`, `Steps`, `Step`, `Tabs`, `TabItem`, `CodeGroup`, `Accordion`, `AccordionGroup`, `Endpoint`, `ParamField`, `ResponseField`, `Badge`. Import from `@/components/mdx`.
+- `astro.config.mjs`: wraps tables for horizontal scrolling and passes ```` ```lang title="…" ```` through as the `<CodeGroup>` tab label.
+- `src/styles/global.css`: Tailwind v4 theme and prose styles. Prose rules only target class-less elements (Markdown output), so component markup is unaffected. Colour tokens come from `mesonet`: `--color-tempest: #dc2929` (accent), `--color-sleet: #151518`, `--color-storm: #09090b`, `--color-blizzard: #f8f8f8`, plus the shadcn HSL surface tokens.

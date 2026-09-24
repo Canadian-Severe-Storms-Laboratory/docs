@@ -1,0 +1,114 @@
+---
+title: "Data tiles"
+description: "Fetch model fields as Web Mercator tiles of packed values, and decode them."
+group: "Cyclone API"
+order: 3
+icon: "grid"
+---
+
+import { Callout, CodeGroup, Endpoint, ParamField } from '@/components/mdx';
+
+<Endpoint method="GET" path="/models/{model}/products/{product}/data/{z}/{x}/{y}" />
+
+Returns one 256×256 tile of a product in the standard XYZ Web Mercator tiling, the same scheme used by MapLibre, Leaflet and OpenStreetMap. Tiles hold **data, not images**. Each pixel is a 16-bit integer you decode into a physical value, and you choose the colours yourself.
+
+## Parameters
+
+<ParamField path="model" type="string" required>
+  Model ID from [`/models`](/docs/cyclone/models#models).
+</ParamField>
+
+<ParamField path="product" type="string" required>
+  Product name from [`/products`](/docs/cyclone/models#products). Case-sensitive.
+</ParamField>
+
+<ParamField path="z, x, y" type="integer" required>
+  Tile coordinates. The path may end in `.bin`: `…/{y}.bin`.
+</ParamField>
+
+<ParamField query="run" type="string">
+  Run stamp from [`/runs`](/docs/cyclone/models#runs), such as `20260924T120000Z`. Required unless you pass `time`.
+</ParamField>
+
+<ParamField query="hour" type="integer" default="0">
+  Index into the model's `forecast_hour_axis`. This is not the forecast hour itself; see [Runs and hours](/docs/cyclone/overview#runs-and-hours).
+</ParamField>
+
+<ParamField query="time" type="datetime">
+  Alternative to `run` and `hour`: a valid time in RFC 3339 format. Cyclone uses the newest run with a time step within half a step of it. Returns `418` if no run covers that time. Can't be combined with `run`.
+</ParamField>
+
+<ParamField query="level" type="integer" default="0">
+  For pressure-level products, an index into the product's `levels_hpa`. Ignored otherwise.
+</ParamField>
+
+## Response
+
+The body is 131,072 bytes: 256 × 256 signed 16-bit integers in row-major order, starting at the tile's north-west corner. The byte order is given by the product's `littleEndian` flag. Responses are gzip-compressed on the wire if your client accepts it.
+
+The encoding is also sent as headers, so you can decode a tile without calling `/products` first:
+
+| Header | Example |
+| --- | --- |
+| `X-Data-Dtype` | `int16` |
+| `X-Data-Width`, `X-Data-Height` | `256` |
+| `X-Data-Scale` | `0.0146484375` |
+| `X-Data-Offset` | `280` |
+| `X-Data-Nodata` | `-32768` |
+
+## Decoding
+
+Each pixel converts to a value in the product's `units` like this:
+
+```text
+value = raw × scale + offset
+```
+
+Pixels equal to `nodata` are outside the model's domain or have no data. If a whole tile is empty, the response is `418` with the code `empty_tile`.
+
+<CodeGroup>
+  ```ts title="TypeScript"
+  const BASE = 'https://cyclone.cssl.ca/models/rdps';
+
+  const { runs } = await (await fetch(`${BASE}/runs`)).json();
+  const { products } = await (await fetch(`${BASE}/products`)).json();
+  const { encoding } = products.find((p) => p.name === 'T2m');
+
+  const res = await fetch(`${BASE}/products/T2m/data/6/17/23?run=${runs[0]}&hour=6`);
+  if (res.status === 418) throw new Error('No data for this tile');
+  const view = new DataView(await res.arrayBuffer());
+
+  // Decode to physical values; NaN where there's no data.
+  const values = new Float32Array(encoding.width * encoding.height);
+  for (let i = 0; i < values.length; i++) {
+    const raw = view.getInt16(i * 2, encoding.littleEndian);
+    values[i] = raw === encoding.nodata ? NaN : raw * encoding.scale + encoding.offset;
+  }
+  ```
+
+  ```python title="Python"
+  import numpy as np
+  import requests
+
+  BASE = "https://cyclone.cssl.ca/models/rdps"
+
+  run = requests.get(f"{BASE}/runs").json()["runs"][0]
+  products = requests.get(f"{BASE}/products").json()["products"]
+  enc = next(p["encoding"] for p in products if p["name"] == "T2m")
+
+  res = requests.get(f"{BASE}/products/T2m/data/6/17/23", params={"run": run, "hour": 6})
+  res.raise_for_status()
+
+  dtype = "<i2" if enc["littleEndian"] else ">i2"
+  raw = np.frombuffer(res.content, dtype=dtype).reshape(enc["height"], enc["width"])
+  values = np.where(raw == enc["nodata"], np.nan, raw * enc["scale"] + enc["offset"])
+  ```
+</CodeGroup>
+
+## How tiles are built
+
+Cyclone stores each model on its native grid and reprojects to Web Mercator for every request. At high zoom levels each pixel takes the nearest grid cell's value. When a pixel covers many grid cells, it takes their average, ignoring cells with no data.
+
+<Callout type="tip">
+  Tiles for a given run, hour and level never change, and they're served with `Cache-Control: immutable`. A browser or CDN cache in front of Cyclone will absorb repeat requests when users scrub back and forth in time.
+</Callout>

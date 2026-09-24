@@ -1,25 +1,26 @@
 import type { APIRoute } from 'astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import { docUrl, sortDocs } from '@/lib/docs';
 
 export const GET: APIRoute = async () => {
-  const docs = await getCollection('docs');
+  const docs = sortDocs(await getCollection('docs'));
 
-  const searchIndex = docs.map((doc) => {
-    // If doc.id is index, url is /docs, else /docs/${doc.id}
-    const cleanId = doc.id.replace(/\.(md|mdx)$/, '');
-    const url = cleanId === 'index' ? '/docs' : `/docs/${cleanId}`;
+  const index = await Promise.all(
+    docs.map(async (doc) => {
+      const { headings } = await render(doc);
+      return {
+        title: doc.data.title,
+        description: doc.data.description ?? '',
+        group: doc.data.group,
+        url: docUrl(doc),
+        headings: headings
+          .filter((h) => h.depth === 2 || h.depth === 3)
+          .map((h) => ({ text: h.text, slug: h.slug })),
+      };
+    }),
+  );
 
-    return {
-      title: doc.data.title,
-      description: doc.data.description || '',
-      url,
-      group: doc.data.group || 'General',
-    };
-  });
-
-  return new Response(JSON.stringify(searchIndex), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  return new Response(JSON.stringify(index), {
+    headers: { 'Content-Type': 'application/json' },
   });
 };

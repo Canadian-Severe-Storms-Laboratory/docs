@@ -1,0 +1,50 @@
+---
+title: "Weather Intelligence"
+description: "What the weather.cssl.ca portal shows, and where each layer's data comes from."
+group: "Architecture"
+order: 2
+icon: "monitor"
+---
+
+[Weather Intelligence](https://weather.cssl.ca) is CSSL's web map for surface observations, radar, satellite and forecast models. It has three modes.
+
+## Observations
+
+The default mode shows current conditions. Station data and alerts refresh every five minutes.
+
+| Layer | What it shows | Source |
+| --- | --- | --- |
+| Stations | A WMO station plot, or a single variable: temperature, pressure, dew point or wind gust. Wind barbs are in knots. | Raindrop [readings](/docs/raindrop/stations#readings-in-an-area) |
+| Alerts | ECCC watches, warnings, advisories and statements, filterable by type, colour and hazard, including storm-based polygons | Raindrop [alerts](/docs/raindrop/alerts) |
+| Satellite | GOES-19 infrared, every 10 minutes | Cyclone `goes-east` |
+| Radar | Single-site volumes from ECCC and NEXRAD radars: reflectivity, velocity, azimuthal shear, spectrum width and dual-polarization fields. Requires Pro. | Cyclone `/radar` |
+| Lightning | NLDN lightning density over the last 5 or 30 minutes | Cyclone `mrms-nldn-*` |
+| Max hail size | MRMS Maximum Expected Size of Hail (MESH) | Cyclone `mrms-mesh-30min` |
+
+Clicking a station opens its details and recent history, drawn from [time series](/docs/raindrop/observations#time-series).
+
+## Forecasting
+
+Forecasting mode maps model output from Cyclone. You pick a model, a field and a time. By default the map shows the newest run covering that time; you can also lock it to one run.
+
+- **Models:** HRDPS, RDPS, RRFS, HRRR, NBM, GFS and ICON. Most need a signed-in account; see [plans](/docs/authentication#plans).
+- **Fields:** surface fields, thermodynamics (CAPE, CIN, lifted index, lapse rates), kinematics (bulk shear, storm-relative helicity), composite indices (SCP, STP, SHIP, EHI) and probabilities. Each model's list comes from its [`/products`](/docs/cyclone/models#products).
+- **Overlays:** wind barbs at the surface, on pressure levels, and for shear and storm motion; contours of height, temperature, dew point, θe, wind speed, thickness and pressure; analyzed fronts and pressure centres.
+- **Soundings:** click the map for a Skew-T, a hodograph and derived indices at that point, built from Cyclone [point queries](/docs/cyclone/point-queries).
+
+Temperatures show in °C by default. You can switch to kelvin.
+
+## Historical
+
+Historical mode replays past observations. It has two views: a time series you can scrub through, and daily severe storm summaries. It requires a Pro plan.
+
+## Other features
+
+- **Export:** save the map as PNG, or a time loop as GIF.
+- **Share:** copy a link to the current view, or an `<iframe>` snippet to embed it.
+- **Bulk download:** export station data as CSV. Requires a Commercial plan.
+- **Outlooks:** view severe weather outlooks from ECCC, Nadocast and CSSL forecasters. Requires a Commercial plan. CSSL forecasters also draw and publish outlooks here.
+
+## Credits
+
+Observations and alerts come from Environment and Climate Change Canada and its partner networks, NAV CANADA, Hydro-Québec, the University of Prince Edward Island, HailSTORM, and the US National Weather Service. Model data comes from ECCC, NOAA and Deutscher Wetterdienst. Basemaps are from Esri.

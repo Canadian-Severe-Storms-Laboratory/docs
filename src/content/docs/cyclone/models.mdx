@@ -1,0 +1,136 @@
+---
+title: "Models, runs and products"
+sidebarTitle: "Models and runs"
+description: "Discover which models, runs and fields are available, and how each field is encoded."
+group: "Cyclone API"
+order: 2
+icon: "boxes"
+---
+
+import { Endpoint, ResponseField } from '@/components/mdx';
+
+These catalog endpoints tell you what you can request. Check them before building data URLs; don't hard-code runs or product names.
+
+## Models
+
+<Endpoint method="GET" path="/models" />
+
+Returns an array with one entry per model or observation source. No account is needed.
+
+```json
+[
+  {
+    "name": "rdps",
+    "default": false,
+    "prefix": "/models/rdps",
+    "forecast_hours": 85,
+    "forecast_hour_axis": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "products": 57
+  }
+]
+```
+
+<ResponseField name="name" type="string">
+  Model ID, used in every other URL.
+</ResponseField>
+
+<ResponseField name="prefix" type="string">
+  Path prefix for this model's endpoints.
+</ResponseField>
+
+<ResponseField name="forecast_hour_axis" type="integer[]">
+  What each `hour` index means: forecast hours for models, minutes since midnight for observation sources. See [Runs and hours](/docs/cyclone/overview#runs-and-hours). The example above is truncated.
+</ResponseField>
+
+<ResponseField name="forecast_hours" type="integer">
+  Length of `forecast_hour_axis`.
+</ResponseField>
+
+<ResponseField name="products" type="integer">
+  Number of products. List them with [`/products`](#products).
+</ResponseField>
+
+## Coverage
+
+<Endpoint method="GET" path="/models/coverage" />
+
+Returns a GeoJSON `FeatureCollection` with each model's footprint as a polygon, so you can tell which models cover a location. Each feature's `id` is the model ID. Its properties include the latest `run`, the native `grid` type (`rotated_lat_lon`, `lambert_conformal`, `polar_stereographic` or `geostationary`), and the grid size as `ny` × `nx`.
+
+## Runs
+
+<Endpoint method="GET" path="/models/{model}/runs" />
+
+Returns the model's available runs, newest first:
+
+```json
+{ "runs": ["20260924T120000Z", "20260924T060000Z", "20260924T000000Z", "20260923T180000Z"] }
+```
+
+Most models keep between two and four runs.
+
+## Products
+
+<Endpoint method="GET" path="/models/{model}/products" />
+
+Returns every field the model provides, with its unit and tile encoding:
+
+```json
+{
+  "products": [
+    {
+      "name": "T2m",
+      "range": [250.0, 310.0],
+      "units": "K",
+      "encoding": {
+        "dtype": "int16",
+        "littleEndian": true,
+        "width": 256,
+        "height": 256,
+        "scale": 0.0146484375,
+        "offset": 280.0,
+        "nodata": -32768
+      },
+      "levels_hpa": null
+    },
+    {
+      "name": "ABSV_ISBL",
+      "range": [-0.0016, 0.0016],
+      "units": "s^-1",
+      "encoding": { "dtype": "int16", "littleEndian": true, "width": 256, "height": 256, "scale": 7.8125e-7, "offset": 0.0, "nodata": -32768 },
+      "levels_hpa": [850.0, 700.0, 500.0, 250.0]
+    }
+  ]
+}
+```
+
+<ResponseField name="name" type="string">
+  Product name. **Names are case-sensitive**: `T2m`, not `t2m`.
+</ResponseField>
+
+<ResponseField name="units" type="string | null">
+  Unit of decoded values. Most products use SI units (K, Pa, m/s, J/kg), but not all; always check. An empty string means the value has no unit.
+</ResponseField>
+
+<ResponseField name="range" type="[number, number] | null">
+  Range of values the tile encoding can represent. Values outside it are clamped to the nearest end.
+</ResponseField>
+
+<ResponseField name="encoding" type="object">
+  How to decode this product's [data tiles](/docs/cyclone/tiles#decoding). Missing when `range` is `null`; those products can't be served as tiles, only through [point queries](/docs/cyclone/point-queries).
+</ResponseField>
+
+<ResponseField name="levels_hpa" type="number[] | null">
+  For products on pressure levels, the available levels in hPa. Choose one with the `level` parameter, which is an **index** into this array. `null` for single-level products.
+</ResponseField>
+
+### Naming
+
+Product names follow the source model's conventions, so they vary between models. Some patterns:
+
+| Pattern | Meaning | Examples |
+| --- | --- | --- |
+| `…2m`, `…10m` | Near-surface fields | `T2m`, `Td2m`, `RH2m`, `U10m`, `V10m` |
+| `…_ISBL` | Pressure levels (use `level`) | `T_ISBL`, `HGT_ISBL`, `U_ISBL`, `ABSV_ISBL` |
+| Lowercase | Computed by CSSL from model output | `sb_cape`, `ml_cin`, `srh_0_1km`, `bulk_shear_0_6km`, `stp_index`, `theta_e` |
+
+Wind comes as separate `U` and `V` components. On some models, including HRDPS and RDPS, these are relative to the model grid rather than true north. See [Grid-relative winds](/docs/cyclone/point-queries#grid-relative-winds).

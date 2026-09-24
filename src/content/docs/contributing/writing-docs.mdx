@@ -1,0 +1,188 @@
+---
+title: "Writing docs"
+description: "How to add a page to this site, and the components available in MDX."
+group: "Contributing"
+order: 1
+icon: "pen"
+---
+
+import {
+  Accordion,
+  AccordionGroup,
+  Callout,
+  Card,
+  CardGroup,
+  CodeGroup,
+  Endpoint,
+  ParamField,
+  ResponseField,
+  Step,
+  Steps,
+  TabItem,
+  Tabs,
+} from '@/components/mdx';
+
+This site lives in the [`docs`](https://github.com/Canadian-Severe-Storms-Laboratory/docs) repository and is built with Astro. Each page is an MDX file under `src/content/docs/`, and its path sets the URL: `src/content/docs/raindrop/alerts.mdx` becomes `/docs/raindrop/alerts`.
+
+```bash
+bun install
+bun run dev
+```
+
+## Frontmatter
+
+```yaml
+---
+title: "Alerts"                      # Page heading and browser title
+sidebarTitle: "Alerts"               # Optional shorter label for the sidebar
+description: "One-sentence summary." # Shown under the title and in search
+group: "Raindrop API"                # Sidebar section
+order: 4                             # Position within the section
+icon: "bell"                         # Name from src/components/icons.ts
+badge: "Commercial"                  # Optional label next to the sidebar entry
+---
+```
+
+Sections appear in the order set in `src/lib/docs.ts`. To add a section, add its name there.
+
+## Writing guidelines
+
+- **Check facts against the source.** Each API's code is the authority: [`raindrop`](https://github.com/Canadian-Severe-Storms-Laboratory/raindrop), [`cyclone`](https://github.com/Canadian-Severe-Storms-Laboratory/cyclone) and [`mesonet`](https://github.com/Canadian-Severe-Storms-Laboratory/mesonet). For Raindrop, the live [OpenAPI document](https://raindrop.cssl.ca/openapi/v1.json) is also reliable.
+- **Use real responses in examples.** Run the request and paste a trimmed copy of the result. Don't make up field values.
+- **Call the portal Weather Intelligence,** not "Mesonet".
+- Write for someone calling the API for the first time. Say what a thing does, then how to use it.
+
+## Components
+
+Import components from `@/components/mdx`:
+
+```mdx
+import { Callout, Card, CardGroup } from '@/components/mdx';
+```
+
+### Callout
+
+<Callout type="note">A `note` adds context.</Callout>
+<Callout type="tip">A `tip` suggests a better way to do something.</Callout>
+<Callout type="warning" title="With a title">A `warning` flags something that could go wrong.</Callout>
+<Callout type="danger">A `danger` flags data loss or a security risk.</Callout>
+
+```mdx
+<Callout type="warning" title="With a title">
+  A `warning` flags something that could go wrong.
+</Callout>
+```
+
+### Cards
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/docs/quickstart">
+    Links to a page inside the docs.
+  </Card>
+  <Card title="Weather Intelligence" icon="monitor" href="https://weather.cssl.ca">
+    External links open in a new tab.
+  </Card>
+</CardGroup>
+
+```mdx
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/docs/quickstart">
+    Links to a page inside the docs.
+  </Card>
+</CardGroup>
+```
+
+### Steps
+
+<Steps>
+  <Step title="First">Do this.</Step>
+  <Step title="Second">Then this.</Step>
+</Steps>
+
+```mdx
+<Steps>
+  <Step title="First">Do this.</Step>
+  <Step title="Second">Then this.</Step>
+</Steps>
+```
+
+### Code groups
+
+Each fenced block becomes a tab. Set the tab label with `title="…"`; otherwise the language name is used.
+
+<CodeGroup>
+  ```bash title="curl"
+  curl https://cyclone.cssl.ca/models
+  ```
+
+  ```python title="Python"
+  requests.get("https://cyclone.cssl.ca/models").json()
+  ```
+</CodeGroup>
+
+````mdx
+<CodeGroup>
+  ```bash title="curl"
+  curl https://cyclone.cssl.ca/models
+  ```
+
+  ```python title="Python"
+  requests.get("https://cyclone.cssl.ca/models").json()
+  ```
+</CodeGroup>
+````
+
+Every standalone code block also gets a copy button automatically.
+
+### Tabs
+
+<Tabs labels={["Raindrop", "Cyclone"]}>
+  <TabItem default>Station observations and alerts.</TabItem>
+  <TabItem>Model output, radar and satellite.</TabItem>
+</Tabs>
+
+```mdx
+<Tabs labels={["Raindrop", "Cyclone"]}>
+  <TabItem default>Station observations and alerts.</TabItem>
+  <TabItem>Model output, radar and satellite.</TabItem>
+</Tabs>
+```
+
+### Accordions
+
+<AccordionGroup>
+  <Accordion title="Collapsed by default">Put secondary detail here.</Accordion>
+  <Accordion title="Open on load" defaultOpen>Pass `defaultOpen` to expand it.</Accordion>
+</AccordionGroup>
+
+```mdx
+<AccordionGroup>
+  <Accordion title="Collapsed by default">Put secondary detail here.</Accordion>
+</AccordionGroup>
+```
+
+### API reference
+
+<Endpoint method="GET" base="/api/v1" path="/alerts/zones" />
+
+<ParamField query="codes" type="string" required>
+  Comma-separated zone codes.
+</ParamField>
+
+<ResponseField name="clcCode" type="string">
+  The zone code.
+</ResponseField>
+
+```mdx
+<Endpoint method="GET" base="/api/v1" path="/alerts/zones" />
+
+<ParamField query="codes" type="string" required>
+  Comma-separated zone codes.
+</ParamField>
+
+<ResponseField name="clcCode" type="string">
+  The zone code.
+</ResponseField>
+```
+
+`ParamField` takes one of `query`, `path`, `body` or `header` as the parameter name, plus optional `required` and `default`.

@@ -11,100 +11,96 @@ interface Props {
   title: string;
   description?: string;
   group?: string;
-  badge?: string;
   headings?: MarkdownHeading[];
   prev?: PageLink | null;
   next?: PageLink | null;
   currentPath: string;
   groups: NavGroup[];
+  editUrl?: string;
 }
 
-const {
-  title,
-  description,
-  group,
-  badge,
-  headings = [],
-  prev,
-  next,
-  currentPath,
-  groups,
-} = Astro.props;
+const { title, description, group, headings = [], prev, next, currentPath, groups, editUrl } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>
   <Header currentPath={currentPath} />
 
-  <div class="mx-auto flex w-full max-w-7xl flex-1 px-4 sm:px-6 lg:px-8">
-    <!-- Left Sidebar -->
+  <div class="mx-auto flex w-full max-w-[90rem] flex-1 px-4 sm:px-6 lg:px-8">
     <Sidebar currentPath={currentPath} groups={groups} />
 
-    <!-- Center Main Content -->
-    <main class="min-w-0 flex-1 py-8 md:px-8 lg:px-12">
-      <div class="max-w-3xl">
-        <!-- Breadcrumbs -->
-        <Breadcrumbs group={group} title={title} />
+    <main class="min-w-0 flex-1 pt-8 pb-16 md:pl-8 lg:pl-12 xl:pr-12">
+      <div class="mx-auto max-w-3xl">
+        <Breadcrumbs group={group} />
 
-        <!-- Page Header -->
         <header class="mb-8">
-          <div class="flex items-center gap-3">
-            <h1 class="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              {title}
-            </h1>
-            {badge && (
-              <span class="rounded-full border border-tempest/30 bg-tempest/10 px-2.5 py-0.5 text-xs font-semibold tracking-wider text-tempest uppercase">
-                {badge}
-              </span>
-            )}
-          </div>
-          {description && (
-            <p class="mt-3 text-lg leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-          )}
-          <hr class="mt-6 border-border/70" />
+          <h1 class="text-3xl font-bold tracking-tight text-foreground sm:text-[2rem]">{title}</h1>
+          {description && <p class="mt-2 text-lg leading-relaxed text-muted-foreground">{description}</p>}
         </header>
 
-        <!-- Markdown / MDX Body -->
         <article class="docs-prose">
           <slot />
         </article>
 
-        <!-- Bottom Page Navigation -->
         <PageNavigation prev={prev} next={next} />
 
-        <!-- Footer -->
-        <footer class="mt-16 border-t border-border/60 pt-8 pb-12 text-xs text-muted-foreground">
-          <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div class="flex items-center gap-2">
-              <span class="inline-block h-2 w-2 rounded-full bg-tempest"></span>
-              <span>Canadian Severe Storms Laboratory · Western University</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <a
-                href="https://weather.cssl.ca"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-tempest transition-colors"
-              >
-                Weather Intelligence
-              </a>
-              <span>·</span>
-              <a
-                href="https://github.com/Canadian-Severe-Storms-Laboratory"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-tempest transition-colors"
-              >
-                GitHub
-              </a>
-            </div>
+        <footer class="mt-12 flex flex-col gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>Canadian Severe Storms Laboratory · Western University</span>
+          <div class="flex items-center gap-4">
+            <a href="https://weather.cssl.ca" target="_blank" rel="noopener noreferrer" class="hover:text-foreground">
+              Weather Intelligence
+            </a>
+            <a href="https://cssl.ca" target="_blank" rel="noopener noreferrer" class="hover:text-foreground">
+              cssl.ca
+            </a>
+            <a
+              href="https://github.com/Canadian-Severe-Storms-Laboratory"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-foreground"
+            >
+              GitHub
+            </a>
           </div>
         </footer>
       </div>
     </main>
 
-    <!-- Right Sidebar Table of Contents -->
-    <TableOfContents headings={headings} />
+    <TableOfContents headings={headings} editUrl={editUrl} />
   </div>
 </BaseLayout>
+
+<script>
+  // Anchor links on section headings.
+  document.querySelectorAll<HTMLHeadingElement>('.docs-prose h2[id], .docs-prose h3[id]').forEach((heading) => {
+    const anchor = document.createElement('a');
+    anchor.href = `#${heading.id}`;
+    anchor.className = 'heading-anchor';
+    anchor.setAttribute('aria-label', 'Link to this section');
+    heading.appendChild(anchor);
+  });
+
+  // Copy buttons on standalone code blocks (<CodeGroup> has its own).
+  document.querySelectorAll<HTMLPreElement>('.docs-prose pre').forEach((pre) => {
+    if (pre.closest('.code-group')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block';
+    pre.replaceWith(wrapper);
+    wrapper.appendChild(pre);
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'code-copy';
+    button.textContent = 'Copy';
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? pre.innerText);
+        button.textContent = 'Copied';
+        setTimeout(() => (button.textContent = 'Copy'), 1500);
+      } catch {
+        button.textContent = 'Failed';
+      }
+    });
+    wrapper.appendChild(button);
+  });
+</script>

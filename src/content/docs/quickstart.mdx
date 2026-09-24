@@ -1,103 +1,163 @@
 ---
 title: "Quickstart"
-description: "Get started with the CSSL Weather Intelligence platform and query live station observations in under 5 minutes."
+description: "Find a station, read its latest observations, then pull a model forecast for the same place."
 group: "Getting Started"
 order: 2
 icon: "rocket"
 ---
 
-import Steps from '@/components/mdx/Steps.astro';
-import Step from '@/components/mdx/Step.astro';
-import Callout from '@/components/mdx/Callout.astro';
-import CodeGroup from '@/components/mdx/CodeGroup.astro';
-import CardGroup from '@/components/mdx/CardGroup.astro';
-import Card from '@/components/mdx/Card.astro';
+import { Callout, CodeGroup, Step, Steps } from '@/components/mdx';
 
-This guide walks you through authenticating with the CSSL Raindrop API and fetching your first batch of weather station observations.
+None of these requests need an account. The shell examples use [`jq`](https://jqlang.org) to filter JSON.
 
 <Steps>
-  <Step title="Obtain an API Key">
-    Log in to **CSSL Weather Intelligence** at [weather.cssl.ca](https://weather.cssl.ca), open your account settings, and navigate to the **API Keys** tab. Generate a new API key with the `read:stations` and `read:observations` scopes.
-
-    <Callout type="note" title="Environment Credentials">
-      Store your key securely. For client applications, use `VITE_BACKEND_URL` and inject your token via the `Authorization: Bearer <TOKEN>` header.
-    </Callout>
-  </Step>
-
-  <Step title="Query Available Stations">
-    Retrieve active stations filtered by bounding box or network name:
-
-    <CodeGroup>
-      ```bash
-      # Using curl
-      curl -X GET "https://raindrop.cssl.ca/api/v1/stations?network=cssl-mesonet" \
-        -H "Authorization: Bearer YOUR_API_KEY"
-      ```
-
-      ```typescript
-      // Using TypeScript & fetch
-      const response = await fetch('https://raindrop.cssl.ca/api/v1/stations?network=cssl-mesonet', {
-        headers: {
-          'Authorization': `Bearer ${process.env.CSSL_API_KEY}`,
-          'Accept': 'application/json',
-        },
-      });
-
-      const stations = await response.json();
-      console.log(`Found ${stations.length} active stations.`);
-      ```
-
-      ```python
-      # Using Python requests
-      import requests
-      import os
-
-      url = "https://raindrop.cssl.ca/api/v1/stations"
-      headers = {"Authorization": f"Bearer {os.environ['CSSL_API_KEY']}"}
-      params = {"network": "cssl-mesonet"}
-
-      res = requests.get(url, headers=headers, params=params)
-      stations = res.json()
-      print(f"Loaded {len(stations)} stations.")
-      ```
-    </CodeGroup>
-  </Step>
-
-  <Step title="Fetch Real-Time Observations">
-    Once you have a `station_id`, query current weather conditions including 2m temperature, relative humidity, wind speed, gust, and barometric pressure:
+  <Step title="Find a station">
+    Raindrop identifies stations by UUID. [`GET /stations/map/details`](/docs/raindrop/stations#station-details) returns every station keyed by ID. The `window=1d` parameter limits it to stations that reported in the last day. This finds the NAV CANADA station at London, Ontario:
 
     ```bash
-    curl -X GET "https://raindrop.cssl.ca/api/v1/observations/latest?station_id=CA-ON-0492" \
-      -H "Authorization: Bearer YOUR_API_KEY"
+    curl -s --compressed "https://raindrop.cssl.ca/api/v1/stations/map/details?window=1d" \
+      | jq 'to_entries[]
+            | select(.value.name == "London")
+            | {id: .key, network: .value.network}'
     ```
-
-    The response returns structured JSON with ISO timestamps and calibrated units:
 
     ```json
     {
-      "station_id": "CA-ON-0492",
-      "timestamp": "2026-09-23T19:30:00Z",
-      "temperature_c": 19.4,
-      "dewpoint_c": 14.2,
-      "relative_humidity": 72,
-      "wind_speed_kmh": 24.5,
-      "wind_gust_kmh": 41.2,
-      "wind_direction_deg": 245,
-      "pressure_kpa": 101.42,
-      "precipitation_rate_mmh": 0.0,
-      "quality_flag": "QC_PASSED"
+      "id": "12efaad4-2ddd-42c1-bba2-0c00031e4a98",
+      "network": "NAV CANADA"
     }
     ```
   </Step>
+
+  <Step title="Get the latest readings">
+    [`POST /stations/readings`](/docs/raindrop/stations#readings-for-specific-stations) returns the most recent reading of each requested variable for the stations you name:
+
+    ```bash
+    curl -s --compressed -X POST \
+      "https://raindrop.cssl.ca/api/v1/stations/readings?names=airTemperature,dewPointTemperature,windSpeed10m" \
+      -H "Content-Type: application/json" \
+      -d '{"stationIds": ["12efaad4-2ddd-42c1-bba2-0c00031e4a98"]}'
+    ```
+
+    ```json
+    {
+      "stations": {
+        "12efaad4-2ddd-42c1-bba2-0c00031e4a98": {
+          "readings": [
+            {
+              "timestamp": "2026-09-24T19:00:00Z",
+              "type": "airTemperature",
+              "typeId": 560,
+              "value": 19.7,
+              "quality": { "baseQuality": "Good", "reasonQuality": "None" }
+            },
+            {
+              "timestamp": "2026-09-24T19:00:00Z",
+              "type": "windSpeed10m",
+              "typeId": 38094,
+              "value": 19.8,
+              "quality": { "baseQuality": "Good", "reasonQuality": "None" }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+    Temperatures are in °C and wind speeds in km/h. [`GET /observations/units`](/docs/raindrop/observations#units) lists the unit for every variable.
+  </Step>
+
+  <Step title="Pull a time series">
+    For one variable over a time range, use [`POST /observations/series`](/docs/raindrop/observations#time-series):
+
+    <CodeGroup>
+      ```bash title="curl"
+      curl -s --compressed -X POST \
+        "https://raindrop.cssl.ca/api/v1/observations/series?start=2026-09-24T00:00:00Z&end=2026-09-24T23:59:59Z" \
+        -H "Content-Type: application/json" \
+        -d '{"stationId": "12efaad4-2ddd-42c1-bba2-0c00031e4a98", "name": "airTemperature"}' \
+        | jq -c '.readings[] | [.timestamp, .value]'
+      ```
+
+      ```python title="Python"
+      import requests
+
+      res = requests.post(
+          "https://raindrop.cssl.ca/api/v1/observations/series",
+          params={"start": "2026-09-24T00:00:00Z", "end": "2026-09-24T23:59:59Z"},
+          json={"stationId": "12efaad4-2ddd-42c1-bba2-0c00031e4a98", "name": "airTemperature"},
+      )
+      res.raise_for_status()
+
+      for reading in res.json()["readings"]:
+          print(reading["timestamp"], reading["value"])
+      ```
+
+      ```ts title="TypeScript"
+      const params = new URLSearchParams({
+        start: '2026-09-24T00:00:00Z',
+        end: '2026-09-24T23:59:59Z',
+      });
+
+      const res = await fetch(`https://raindrop.cssl.ca/api/v1/observations/series?${params}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stationId: '12efaad4-2ddd-42c1-bba2-0c00031e4a98',
+          name: 'airTemperature',
+        }),
+      });
+
+      const series = await res.json();
+      for (const r of series.readings) console.log(r.timestamp, r.value);
+      ```
+    </CodeGroup>
+
+    Without an account the window can be at most 7 days and must end within the last 7 days. See [time windows](/docs/raindrop/overview#time-windows).
+  </Step>
+
+  <Step title="Get a forecast from Cyclone">
+    Cyclone serves model output as 256×256 [data tiles](/docs/cyclone/tiles) of packed 16-bit integers. This script reads the RDPS 2 m temperature forecast for London six hours into the latest run:
+
+    ```python
+    import math
+    import requests
+    import numpy as np
+
+    BASE = "https://cyclone.cssl.ca/models/rdps"
+
+    run = requests.get(f"{BASE}/runs").json()["runs"][0]
+    products = {p["name"]: p for p in requests.get(f"{BASE}/products").json()["products"]}
+    enc = products["T2m"]["encoding"]
+
+    # Find the Web Mercator tile and pixel that contain London, Ontario.
+    lat, lon, z = 43.03, -81.15, 6
+    n = 2**z
+    x = (lon + 180) / 360 * n
+    y = (1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n
+
+    res = requests.get(f"{BASE}/products/T2m/data/{z}/{int(x)}/{int(y)}", params={"run": run, "hour": 6})
+    res.raise_for_status()
+    tile = np.frombuffer(res.content, dtype="<i2").reshape(enc["height"], enc["width"])
+
+    raw = tile[int(y % 1 * enc["height"]), int(x % 1 * enc["width"])]
+    if raw != enc["nodata"]:
+        kelvin = raw * enc["scale"] + enc["offset"]
+        print(f"RDPS {run}, +6 h: {kelvin - 273.15:.1f} °C")
+    ```
+
+    ```text
+    RDPS 20260924T120000Z, +6 h: 18.8 °C
+    ```
+
+    <Callout type="note">
+      Most Cyclone products use SI units, so this temperature is in kelvin. [`/products`](/docs/cyclone/models#products) lists the unit of every product.
+    </Callout>
+  </Step>
 </Steps>
 
-## Next Steps
+## Next steps
 
-<CardGroup cols={2}>
-  <Card title="Stations API Reference" icon="database" href="/docs/api/stations">
-    Learn how to filter stations by geographic coordinates, elevation, and instrument capabilities.
-  </Card>
-  <Card title="Architecture Overview" icon="layers" href="/docs/architecture/overview">
-    Understand how data flows from sensors through Raindrop and into Cyclone forecast engines.
-  </Card>
-</CardGroup>
+- [Authentication](/docs/authentication) covers what an account or API key adds.
+- The [Raindrop API overview](/docs/raindrop/overview) covers conventions, limits and errors.
+- The [Cyclone API overview](/docs/cyclone/overview) explains the models and how runs and forecast hours are addressed.

@@ -1,0 +1,215 @@
+---
+title: "Stations"
+description: "List stations, look up their metadata, and read their observations."
+group: "Raindrop API"
+order: 2
+icon: "map-pin"
+---
+
+import { Callout, Endpoint, ParamField, ResponseField } from '@/components/mdx';
+
+The station endpoints are split by what they return:
+
+- **`/stations/map/markers`**: where each station is
+- **`/stations/map/details`**: what each station is
+- **`/stations/readings`**: what each station measured
+
+All three are keyed by station ID. Fetch locations and metadata once, then join readings onto them.
+
+## Station locations
+
+<Endpoint method="GET" base="/api/v1" path="/stations/map/markers" />
+
+Returns a GeoJSON `FeatureCollection` with one `Point` feature for every station on record. Each feature's `id` is the station ID, and `properties` is always empty. The response takes no parameters and only changes when a station is added or moves, so fetch it once and cache it.
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "12efaad4-2ddd-42c1-bba2-0c00031e4a98",
+      "geometry": { "type": "Point", "coordinates": [-81.1511, 43.0331] },
+      "properties": {}
+    }
+  ]
+}
+```
+
+## Station details
+
+<Endpoint method="GET" base="/api/v1" path="/stations/map/details" />
+
+Returns metadata for every station, as an object keyed by station ID. Without `window` it covers the same stations as `/stations/map/markers`.
+
+<ParamField query="window" type="string">
+  Only include stations that reported within this span of now. Use a whole number of days or hours: `7d`, `36h`.
+</ParamField>
+
+```json
+{
+  "12efaad4-2ddd-42c1-bba2-0c00031e4a98": {
+    "network": "NAV CANADA",
+    "name": "London",
+    "stationType": "OpenCountry",
+    "presentWeather": ["No present weather available"],
+    "coordinates": [-81.1511, 43.0331],
+    "elevation": 10,
+    "updateTime": "2026-09-24T19:00:00Z",
+    "types": [
+      {
+        "id": 560,
+        "name": "airTemperature",
+        "prettyName": "Air Temperature",
+        "groupBucketName": "",
+        "reportedUnit": "°C",
+        "calculated": false,
+        "intervalType": "Instantaneous",
+        "intervalMinutes": 0,
+        "firstAppearance": "2024-11-22T20:00:00Z"
+      }
+    ],
+    "qualities": ["Good"]
+  }
+}
+```
+
+<ResponseField name="network" type="string">
+  The data provider, as named by the source feed. Examples: `MSC`, `NAV CANADA`, `ON-MTO`, `BC-FOR`, `HYDROQUEBEC`, `UPEI`, `HailSTORM` and `NWS`. See [Data sources](/docs/architecture/data-sources#station-networks).
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The station name as the provider reports it. Names are only unique within a network.
+</ResponseField>
+
+<ResponseField name="stationType" type="string">
+  Exposure class: `OpenCountry`, `Suburban` or `OpenWater`.
+</ResponseField>
+
+<ResponseField name="coordinates" type="[number, number]">
+  `[longitude, latitude]` in decimal degrees.
+</ResponseField>
+
+<ResponseField name="elevation" type="number">
+  **Sensor height above ground in metres, not altitude.** It's a fixed value per network, such as 10 m for ECCC stations or 3 m for HailSTORM. It's `0` when the network doesn't supply one.
+</ResponseField>
+
+<ResponseField name="updateTime" type="string">
+  Time of the station's most recent report.
+</ResponseField>
+
+<ResponseField name="types" type="ObservationType[]">
+  The series this station reports. A station can report the same variable more than once, with different averaging intervals. See [Series](/docs/raindrop/observations#series).
+</ResponseField>
+
+<ResponseField name="qualities" type="string[]">
+  The distinct [quality codes](/docs/raindrop/observations#quality-flags) of the station's latest readings over the last 12 hours, worst first. An empty array means the station hasn't reported any map variables in that time. Use this to hide faulty stations without fetching readings.
+</ResponseField>
+
+## One station
+
+<Endpoint method="GET" base="/api/v1" path="/stations/{stationId}" />
+
+Returns the details object for a single station, in the same shape as one entry above. Returns `404` if no station has that ID.
+
+## Readings in an area
+
+<Endpoint method="GET" base="/api/v1" path="/stations/readings" />
+
+Returns readings for every station that reported during the window, optionally limited to a bounding box.
+
+<ParamField query="start" type="datetime" default="end − 12 h">
+  Start of the window. Stations are included if they've reported since `start`.
+</ParamField>
+
+<ParamField query="end" type="datetime" default="now">
+  End of the window.
+</ParamField>
+
+<ParamField query="names" type="string[]">
+  Which variables to return. Repeat the parameter (`names=a&names=b`) or separate names with commas. Defaults to all of: `airTemperature`, `dewPointTemperature`, `windSpeed10m`, `windGust10m`, `windDirection`, `mslp`, `seaSurfaceTemperature` and `seaSurfaceTemperature1m`. Any other name returns `400`.
+</ParamField>
+
+<ParamField query="minLat, minLon, maxLat, maxLon" type="number">
+  Bounding box. Pass all four or none. `minLon` can be greater than `maxLon` for a box that crosses the antimeridian.
+</ParamField>
+
+<ParamField query="step" type="integer">
+  Grid spacing in minutes. Leave it out for a snapshot. See [Snapshots and grids](#snapshots-and-grids).
+</ParamField>
+
+```bash
+curl -s --compressed \
+  "https://raindrop.cssl.ca/api/v1/stations/readings?names=airTemperature&minLat=42&minLon=-83.5&maxLat=46&maxLon=-74.5"
+```
+
+```json
+{
+  "stations": {
+    "12efaad4-2ddd-42c1-bba2-0c00031e4a98": {
+      "readings": [
+        {
+          "timestamp": "2026-09-24T19:00:00Z",
+          "type": "airTemperature",
+          "typeId": 560,
+          "value": 19.7,
+          "quality": { "baseQuality": "Good", "reasonQuality": "None" }
+        }
+      ]
+    }
+  }
+}
+```
+
+Stations with nothing in the window are left out.
+
+<ResponseField name="step" type="integer">
+  The grid spacing actually used, in minutes. Present only when you requested a grid.
+</ResponseField>
+
+<ResponseField name="readings[].type" type="string">
+  The variable name.
+</ResponseField>
+
+<ResponseField name="readings[].typeId" type="integer">
+  The series this reading came from. Matches `types[].id` in the station details, which gives the averaging interval and unit.
+</ResponseField>
+
+<ResponseField name="readings[].quality" type="object">
+  `baseQuality` and `reasonQuality` codes. See [Quality flags](/docs/raindrop/observations#quality-flags).
+</ResponseField>
+
+<ResponseField name="readings[].age" type="integer">
+  Grid mode only. How many seconds before the grid time the reading was taken.
+</ResponseField>
+
+### Snapshots and grids
+
+Without `step`, you get a **snapshot**: the latest reading of each series in the window.
+
+With `step`, you get a **grid**: one reading per variable at `start`, `start + step`, and so on up to `end`. The grid also includes `end` itself when the step doesn't divide the window evenly. Each cell holds the latest reading at or before that time, and `age` says how old it is.
+
+`step` is a request, not a guarantee. Responses are capped at 500,000 cells and 2,000 time positions. If your request would exceed that, the server coarsens the grid to a whole multiple of your `step` rather than failing. Read `step` from the response rather than assuming it. Asking for fewer `names` or a smaller area leaves room for a finer grid.
+
+<Callout type="note">
+  When a station reports a variable at several intervals, each grid cell uses the most instantaneous one that's current at that time. So a series' `typeId` can change from one cell to the next. Look up each cell by its own `typeId`.
+</Callout>
+
+## Readings for specific stations
+
+<Endpoint method="POST" base="/api/v1" path="/stations/readings" />
+
+The same as the `GET` form, but you name the stations instead of giving a bounding box. It takes the same `start`, `end`, `names` and `step` query parameters.
+
+<ParamField body="stationIds" type="string[]" required>
+  Station IDs, up to 5,000. An empty list returns an empty `stations` object.
+</ParamField>
+
+```bash
+curl -s --compressed -X POST \
+  "https://raindrop.cssl.ca/api/v1/stations/readings?step=60&start=2026-09-24T00:00:00Z&end=2026-09-24T12:00:00Z" \
+  -H "Content-Type: application/json" \
+  -d '{"stationIds": ["12efaad4-2ddd-42c1-bba2-0c00031e4a98"]}'
+```
+
+Naming fewer stations means fewer series to fit under the cell cap, so this form can return a finer grid than a bounding box would.

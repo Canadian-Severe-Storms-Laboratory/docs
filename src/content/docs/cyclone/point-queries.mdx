@@ -1,0 +1,135 @@
+---
+title: "Point queries"
+description: "Read exact model values at one grid point: several fields at once, whole soundings, and time series."
+group: "Cyclone API"
+order: 4
+icon: "crosshair"
+---
+
+import { Callout, Endpoint, ParamField } from '@/components/mdx';
+
+Point queries return exact values from the model's native grid, with no reprojection or averaging. Weather Intelligence uses them for soundings, hodographs and forecast graphs.
+
+<Callout type="warning" title="Grid coordinates, not latitude and longitude">
+  Points are addressed by `row` and `col` on the model's native grid. There's no public endpoint that returns the grid's projection parameters yet, so converting a latitude and longitude to a row and column means working it out from the model's own grid definition. These endpoints are mostly used by Weather Intelligence.
+</Callout>
+
+## One point
+
+<Endpoint method="GET" path="/models/{model}/point" />
+
+Returns one or more fields at one grid cell and one time step.
+
+<ParamField query="run" type="string" required>
+  Run stamp from [`/runs`](/docs/cyclone/models#runs).
+</ParamField>
+
+<ParamField query="hour" type="integer" required>
+  Index into the model's `forecast_hour_axis`.
+</ParamField>
+
+<ParamField query="row, col" type="integer" required>
+  Grid cell, as zero-based indices into the native grid. [`/models/coverage`](/docs/cyclone/models#coverage) gives the grid size as `ny` × `nx`.
+</ParamField>
+
+<ParamField query="fields" type="string" required>
+  Comma-separated product names.
+</ParamField>
+
+<ParamField query="level" type="integer">
+  For pressure-level products, return only this index into `levels_hpa`. Leave it out to get the whole vertical column.
+</ParamField>
+
+```bash
+curl -s --compressed \
+  "https://cyclone.cssl.ca/models/rdps/point?run=20260924T120000Z&hour=6&row=500&col=500&fields=T2m,T_ISBL"
+```
+
+```json
+{
+  "run": "20260924T120000Z",
+  "hour": 6,
+  "valid_time": "2026-09-24T18:00:00Z",
+  "forecast_hours": 85,
+  "row": 500,
+  "col": 500,
+  "fields": {
+    "T2m": { "unit": "K", "value": 290.16 },
+    "T_ISBL": {
+      "unit": "K",
+      "levels_hpa": [1015.0, 1000.0, 985.0, 970.0],
+      "values": [292.55, 291.93, 291.24, 290.6]
+    }
+  },
+  "wind_rotation": { "cos": 0.97613484, "sin": -0.21716534 }
+}
+```
+
+Single-level fields return a `value`. Pressure-level fields return `levels_hpa` and a matching `values` array, which together make a sounding. The column above is truncated. Missing values are `null`.
+
+## Time series
+
+<Endpoint method="GET" path="/models/{model}/series" />
+
+Returns every time step of a run at one grid cell.
+
+<ParamField query="run" type="string" required>
+  Run stamp.
+</ParamField>
+
+<ParamField query="row, col" type="integer" required>
+  Grid cell.
+</ParamField>
+
+<ParamField query="fields" type="string" required>
+  Comma-separated product names.
+</ParamField>
+
+<ParamField query="level" type="integer">
+  Index into `levels_hpa` for pressure-level products.
+</ParamField>
+
+<ParamField query="from, to" type="datetime">
+  Only include valid times in this range (inclusive). Either bound can be left out.
+</ParamField>
+
+```bash
+curl -s --compressed \
+  "https://cyclone.cssl.ca/models/rdps/series?run=20260924T120000Z&row=500&col=500&fields=T2m&from=2026-09-24T12:00:00Z&to=2026-09-24T14:00:00Z"
+```
+
+```json
+{
+  "run": "20260924T120000Z",
+  "row": 500,
+  "col": 500,
+  "forecast_hours": 85,
+  "valid_from": "2026-09-24T12:00:00Z",
+  "valid_to": "2026-09-28T00:00:00Z",
+  "wind_rotation": { "cos": 0.97613484, "sin": -0.21716534 },
+  "fields": {
+    "T2m": {
+      "unit": "K",
+      "levels_hpa": null,
+      "series": [
+        { "hour": 0, "valid_time": "2026-09-24T12:00:00Z", "value": 284.22998 },
+        { "hour": 1, "valid_time": "2026-09-24T13:00:00Z", "value": 284.01 },
+        { "hour": 2, "valid_time": "2026-09-24T14:00:00Z", "value": 284.32 }
+      ]
+    }
+  }
+}
+```
+
+`valid_from` and `valid_to` span the whole run, even when `from` and `to` narrow the series.
+
+## Grid-relative winds
+
+Some models, including HRDPS and RDPS, publish wind components relative to their own grid axes rather than to true north. Both endpoints return `wind_rotation` for the requested cell. To get earth-relative components:
+
+```text
+u_true =  cos × u + sin × v
+v_true = -sin × u + cos × v
+```
+
+The rotation depends only on the cell's position, so the same factors apply at every pressure level.

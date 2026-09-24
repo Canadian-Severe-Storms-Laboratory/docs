@@ -1,0 +1,85 @@
+---
+title: "Raindrop API"
+sidebarTitle: "Overview"
+description: "Base URL, conventions, time windows, rate limits and errors for the observations API."
+group: "Raindrop API"
+order: 1
+icon: "server"
+---
+
+import { Callout } from '@/components/mdx';
+
+Raindrop collects surface observations from weather station networks across Canada and the United States, along with ECCC weather alerts. It serves them over a JSON REST API.
+
+```text
+https://raindrop.cssl.ca/api/v1
+```
+
+The OpenAPI document is at [`/openapi/v1.json`](https://raindrop.cssl.ca/openapi/v1.json), and there's an interactive explorer at [`/swagger`](https://raindrop.cssl.ca/swagger).
+
+## Endpoints
+
+| Endpoint | Description | Access |
+| --- | --- | --- |
+| [`GET /stations/map/markers`](/docs/raindrop/stations#station-locations) | Location of every station, as GeoJSON | Public |
+| [`GET /stations/map/details`](/docs/raindrop/stations#station-details) | Metadata for every station | Public |
+| [`GET /stations/{stationId}`](/docs/raindrop/stations#one-station) | Metadata for one station | Public |
+| [`GET /stations/readings`](/docs/raindrop/stations#readings-in-an-area) | Readings for stations in an area | Public |
+| [`POST /stations/readings`](/docs/raindrop/stations#readings-for-specific-stations) | Readings for specific stations | Public |
+| [`POST /observations/series`](/docs/raindrop/observations#time-series) | One variable at one station over time | Public |
+| [`GET /observations/units`](/docs/raindrop/observations#units) | The unit of each variable | Public |
+| [`GET /alerts`](/docs/raindrop/alerts#alerts) | ECCC weather alerts, as GeoJSON | Public |
+| [`GET /alerts/zones`](/docs/raindrop/alerts#alert-zones) | Forecast zone boundaries | Public |
+| [`POST /historical/bulk`](/docs/raindrop/historical) | Paginated CSV export | Commercial |
+| [`GET /capabilities`](/docs/authentication#checking-access) | What your credential can access | Public |
+
+The raster endpoints under `/products` appear in the OpenAPI document, but they aren't publishing files right now. For hail size and lightning grids, use Cyclone's [MRMS sources](/docs/cyclone/overview#models).
+
+## Conventions
+
+- **Times are UTC**, in ISO 8601. Always send a `Z` or an explicit offset.
+- **Field names are camelCase.** Fields with no value are left out of the response, not returned as `null`.
+- **Enums are strings**, such as `"Instantaneous"` or `"Good"`.
+- **Station IDs are UUIDs.** They stay the same between requests.
+- **GeoJSON coordinates are `[longitude, latitude]`.** So is the `coordinates` field on station details.
+- **Values are converted to a standard unit per variable** when they're ingested: °C, km/h, hPa and so on. Look them up with [`/observations/units`](/docs/raindrop/observations#units) rather than assuming.
+- **Responses are compressed** with gzip or Brotli if you send `Accept-Encoding`. `curl --compressed` does this. It matters: the full station list is about 12 MB uncompressed and under 1 MB compressed.
+
+## Time windows
+
+Endpoints that take `start` and `end` limit how much history you can request. The limit depends on your [plan](/docs/authentication#plans):
+
+| Plan | Lookback |
+| --- | --- |
+| No account, Free | 7 days |
+| Pro | 30 days |
+| Commercial, or any API key | Unlimited |
+
+The lookback applies twice:
+
+1. `end - start` can't be longer than the lookback.
+2. `end` can't be further back than the lookback (plus a one-hour grace period).
+
+Without an account, then, you can request any window of up to 7 days that ends within the last 7 days. Requests that break either rule get a `400` whose message states the limit.
+
+## Rate limits
+
+Each IP address can make **150 requests per 10 seconds** across the whole API. A short burst over the limit is queued rather than refused. Past that, the API returns `429 Too Many Requests` with an empty body and no `Retry-After` header, so back off and retry.
+
+## Browser access (CORS)
+
+Browsers can only call the API from `*.cssl.ca` sites. If you're building a web app on another domain, make the requests from your server.
+
+## Errors
+
+| Status | Body |
+| --- | --- |
+| `400` | A JSON string describing the problem, such as `"start must be before end."` |
+| `401`, `403` | Empty, or `{"reason": "…"}` for a rejected token. See [Authentication](/docs/authentication#when-a-request-is-refused). |
+| `404` | Empty or a JSON string, depending on the endpoint |
+| `429` | Empty |
+| `500` | Empty, or an RFC 7807 `application/problem+json` object |
+
+<Callout type="note">
+  Most error bodies are a bare JSON string, not an object. Parse the body as JSON and check its type before reading fields from it.
+</Callout>

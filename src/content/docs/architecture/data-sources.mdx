@@ -1,0 +1,65 @@
+---
+title: "Data sources"
+description: "Where Raindrop and Cyclone get their data, how often it updates, how long it's kept, and how observations are quality-checked."
+group: "Architecture"
+order: 3
+icon: "globe"
+---
+
+## Station networks
+
+Raindrop's stations come from these feeds. The `network` field on a station holds the provider name the feed reports.
+
+| Feed | Stations | Updates |
+| --- | --- | --- |
+| ECCC MSC Datamart (SWOB-ML) | ECCC and MSC stations, plus partners whose data ECCC redistributes: NAV CANADA, DND, provincial and territorial networks (such as `ON-MTO`, `BC-FOR`, `AB-MAI` and `MB-Ag`), conservation authorities and others | Pushed as reports are published |
+| Hydro-Québec open data | Hydro-Québec's network in Quebec | Every 20 minutes |
+| UPEI Climate Lab | Prince Edward Island | Every 15 minutes |
+| HailSTORM | 29 stations in Alberta | Every 5 minutes |
+| NOAA Aviation Weather Center | METAR stations in the contiguous US (`NWS`) | Hourly |
+
+Scheduled polls run on the clock (for example :00, :20 and :40 for a 20-minute feed), not at intervals measured from startup. Values are converted to [standard units](/docs/raindrop/observations#units) on arrival.
+
+## Other Raindrop feeds
+
+| Feed | Source | Updates |
+| --- | --- | --- |
+| Weather alerts (CAP) | ECCC | Pushed as issued |
+| Alert zone boundaries | ECCC MSC Geography Package | Daily |
+| Thunderstorm outlooks | ECCC | Hourly |
+| Severe weather probability outlooks | Nadocast | Daily |
+| Confirmed tornado and hail reports | Northern Tornadoes Project and Northern Hail Project | Daily |
+
+## Cyclone sources
+
+| Data | Source | Fetched from |
+| --- | --- | --- |
+| HRDPS, RDPS | ECCC | MSC Datamart |
+| HRRR, RRFS, NBM, GFS | NOAA | NOAA Open Data on AWS |
+| ICON | DWD | DWD open data server |
+| MRMS hail size and lightning | NOAA | NOAA Open Data on AWS |
+| GOES-19 infrared | NOAA | NOAA Open Data on AWS |
+| ECCC radar volumes | ECCC | ECCC's radar data service |
+| NEXRAD radar volumes | NOAA | NEXRAD Level II on AWS |
+
+By default, Cyclone checks each source for new data every 5 minutes. It checks MRMS every minute, and GOES and radar every 2 minutes. A model run becomes available once every forecast hour has been ingested and its derived fields computed.
+
+## Retention
+
+- **Raindrop** doesn't expire observations. Data older than a day is compressed in the database.
+- **Cyclone** keeps only the latest few runs of each model, usually two to four. Satellite imagery covers the last 24 hours, and processed radar volumes are kept for 24 hours. The 30-minute MRMS hail and lightning grids are kept indefinitely.
+
+## Quality control
+
+Every Raindrop observation carries a [quality flag](/docs/raindrop/observations#quality-flags).
+
+**ECCC observations** arrive with a quality summary from ECCC's own checks. Raindrop stores it as `baseQuality`, with `reasonQuality` set to `None` for good readings and `Unknown` otherwise. `Suppressed` only comes from ECCC.
+
+**Everything else** starts as `Unknown`, and Raindrop runs its own checks on any reading not already marked `Good`:
+
+- **Range checks** flag values that are impossible (`Error`) or implausible for the time of year (`Doubtful`). Temperature, wind speed and snow depth use month-specific limits.
+- **Rate-of-change checks** flag jumps too large to be real over one to six hours, such as a temperature change of more than 10 °C in an hour.
+- **Persistence checks** flag wind sensors stuck on one value for 12 hours as `Instrumentation` with reason `Inert`.
+- **Consistency checks** compare related values, such as station pressure against sea-level pressure, or an hourly average against that hour's maximum and minimum.
+
+A check only runs when the station has reported the same variable within the previous 12 hours; otherwise the reading stays `Unknown`. A value Raindrop derives, such as dew point from temperature and humidity, gets the worst quality of its inputs.

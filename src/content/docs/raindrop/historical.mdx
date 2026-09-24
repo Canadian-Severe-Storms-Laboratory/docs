@@ -1,0 +1,76 @@
+---
+title: "Bulk export"
+description: "Download a station's full observation history as paginated CSV."
+group: "Raindrop API"
+order: 5
+icon: "file-down"
+badge: "Commercial"
+---
+
+import { Callout, Endpoint, ParamField } from '@/components/mdx';
+
+<Endpoint method="POST" base="/api/v1" path="/historical/bulk" />
+
+Exports one or more variables from a station as CSV, one page at a time. There's no window limit. This endpoint needs a Raindrop API key or a CSSL account on the Commercial plan; lower plans get `403`. See [Authentication](/docs/authentication).
+
+## Request
+
+<ParamField query="start" type="datetime" required>
+  Start of the range, inclusive.
+</ParamField>
+
+<ParamField query="end" type="datetime" required>
+  End of the range, exclusive. Must be after `start`.
+</ParamField>
+
+<ParamField query="pageSize" type="integer" default="200000">
+  Rows per page. The maximum is 200,000.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  The `X-Next-Cursor` value from the previous page.
+</ParamField>
+
+<ParamField body="stationId" type="string" required>
+  Station ID.
+</ParamField>
+
+<ParamField body="requests" type="object[]">
+  The series to export. Each entry takes the same fields as the [time series](/docs/raindrop/observations#time-series) body (`name`, `intervalType`, `intervalMinutes`, `calculated`) plus optional filters: `lowerValueBound`, `upperValueBound` and `qualityRange`. Every entry must use the same filters. If you leave `requests` out, every series at the station is exported.
+</ParamField>
+
+```bash
+curl -s --compressed -X POST \
+  "https://raindrop.cssl.ca/api/v1/historical/bulk?start=2026-01-01T00:00:00Z&end=2026-02-01T00:00:00Z" \
+  -H "Authorization: Bearer $RAINDROP_API_KEY" \
+  -H "Content-Type: application/json" \
+  -D headers.txt -o page1.csv \
+  -d '{
+    "stationId": "12efaad4-2ddd-42c1-bba2-0c00031e4a98",
+    "requests": [{ "name": "airTemperature" }, { "name": "dewPointTemperature" }]
+  }'
+```
+
+## Response
+
+The body is CSV with this header row:
+
+```csv
+lat,lon,observation_name,interval_type,interval_minutes,timestamp,value,quality_base,quality_reason,group_bucket_name
+```
+
+`lat` and `lon` are the station's coordinates. `timestamp` is ISO 8601 UTC. The quality columns hold the [quality flag](/docs/raindrop/observations#quality-flags) codes. Rows are ordered by time, then by series. The response headers tell you what came back:
+
+| Header | Meaning |
+| --- | --- |
+| `X-Has-More` | `True` if there are more pages |
+| `X-Next-Cursor` | Pass this as `cursor` to get the next page |
+| `X-Series-Found` | `False` if the station has no such series |
+| `X-Station-Id` | The station ID, when a series was found |
+| `X-Name` | The exported variable names, when a series was found |
+
+An empty result is still a `200` with just the header row. Check `X-Series-Found`: `False` means the series doesn't exist, while `True` means it exists but has no data in the range.
+
+<Callout type="tip" title="Paging">
+  Keep requesting with the returned cursor until `X-Has-More` is `False`. Leave the query and body unchanged between pages; the cursor only makes sense for the request that produced it.
+</Callout>

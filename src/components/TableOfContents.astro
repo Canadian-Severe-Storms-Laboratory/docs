@@ -1,113 +1,85 @@
 ---
 import type { MarkdownHeading } from 'astro';
-import { Edit3, HelpCircle } from 'lucide-astro';
+import { CircleHelp, SquarePen } from 'lucide-astro';
 
 interface Props {
   headings: MarkdownHeading[];
-  class?: string;
+  editUrl?: string;
 }
 
-const { headings, class: className = '' } = Astro.props;
+const { headings, editUrl } = Astro.props;
 
-// Only show H2 and H3
-const filteredHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
 
-{filteredHeadings.length > 0 && (
-  <div class={`sticky top-20 hidden w-64 shrink-0 xl:block ${className}`}>
-    <div class="h-[calc(100vh-6rem)] overflow-y-auto px-4 pb-8">
-      <h4 class="mb-3 text-[11px] font-bold tracking-[0.14em] text-muted-foreground/80 uppercase">
-        On this page
-      </h4>
-      <ul class="space-y-2 text-xs" id="toc-list">
-        {filteredHeadings.map((heading) => (
-          <li class={`${heading.depth === 3 ? 'ml-3' : ''}`}>
+<aside class="scrollbar-subtle sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 overflow-y-auto pt-8 pb-8 xl:block">
+  {tocHeadings.length > 0 && (
+    <>
+      <h4 class="mb-3 text-xs font-semibold text-foreground">On this page</h4>
+      <ul class="space-y-2 border-l border-border/70 text-[13px]">
+        {tocHeadings.map((heading) => (
+          <li>
             <a
               href={`#${heading.slug}`}
-              class="toc-link block py-0.5 text-muted-foreground transition-colors hover:text-foreground line-clamp-1"
               data-slug={heading.slug}
+              class={`toc-link -ml-px block border-l border-transparent leading-snug text-muted-foreground transition-colors hover:text-foreground ${
+                heading.depth === 3 ? 'pl-6' : 'pl-3'
+              }`}
             >
               {heading.text}
             </a>
           </li>
         ))}
       </ul>
+    </>
+  )}
 
-      <hr class="my-6 border-border/70" />
-
-      <!-- Quick action links -->
-      <div class="space-y-2 text-xs text-muted-foreground">
-        <a
-          href="https://github.com/Canadian-Severe-Storms-Laboratory/docs"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center gap-2 hover:text-foreground transition-colors"
-        >
-          <Edit3 class="h-3.5 w-3.5 text-muted-foreground/70" />
-          <span>Edit this page on GitHub</span>
-        </a>
-        <a
-          href="https://github.com/Canadian-Severe-Storms-Laboratory/mesonet/issues"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center gap-2 hover:text-foreground transition-colors"
-        >
-          <HelpCircle class="h-3.5 w-3.5 text-muted-foreground/70" />
-          <span>Report an issue</span>
-        </a>
-      </div>
-    </div>
+  <div class="mt-8 space-y-2 border-t border-border/70 pt-5 text-[13px] text-muted-foreground">
+    {editUrl && (
+      <a href={editUrl} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-foreground">
+        <SquarePen class="h-3.5 w-3.5" />
+        Edit this page
+      </a>
+    )}
+    <a
+      href="https://github.com/Canadian-Severe-Storms-Laboratory/docs/issues/new"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center gap-2 hover:text-foreground"
+    >
+      <CircleHelp class="h-3.5 w-3.5" />
+      Report an issue
+    </a>
   </div>
-)}
+</aside>
 
 <script>
-  function setupTocScrollspy() {
-    const links = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
-    if (links.length === 0) return;
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc-link')];
+  const targets = links
+    .map((link) => document.getElementById(link.dataset.slug ?? ''))
+    .filter((el): el is HTMLElement => el !== null);
 
-    const headingElements: HTMLElement[] = [];
-    links.forEach((link) => {
-      const slug = link.getAttribute('data-slug');
-      if (slug) {
-        const el = document.getElementById(slug);
-        if (el) headingElements.push(el);
-      }
-    });
-
-    if (headingElements.length === 0) return;
-
-    function onScroll() {
-      const scrollY = window.scrollY;
-      let currentId = '';
-
-      for (const heading of headingElements) {
-        const top = heading.getBoundingClientRect().top + window.scrollY - 100;
-        if (scrollY >= top) {
-          currentId = heading.id;
-        } else {
-          break;
-        }
-      }
-
-      if (!currentId && headingElements[0]) {
-        currentId = headingElements[0].id;
-      }
-
-      links.forEach((link) => {
-        if (link.getAttribute('data-slug') === currentId) {
-          link.classList.add('text-tempest', 'font-medium');
-          link.classList.remove('text-muted-foreground');
-        } else {
-          link.classList.remove('text-tempest', 'font-medium');
-          link.classList.add('text-muted-foreground');
-        }
-      });
+  function highlight() {
+    let current: string | undefined = targets[0]?.id;
+    for (const target of targets) {
+      if (target.getBoundingClientRect().top > 120) break;
+      current = target.id;
     }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    // At the bottom of the page the last sections can't scroll to the top.
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+      current = targets.at(-1)?.id;
+    }
+    for (const link of links) {
+      const active = link.dataset.slug === current;
+      link.classList.toggle('text-tempest', active);
+      link.classList.toggle('border-tempest', active);
+      link.classList.toggle('text-muted-foreground', !active);
+      link.classList.toggle('border-transparent', !active);
+    }
   }
 
-  setupTocScrollspy();
-  document.addEventListener('astro:page-load', setupTocScrollspy);
+  if (targets.length > 0) {
+    window.addEventListener('scroll', highlight, { passive: true });
+    highlight();
+  }
 </script>

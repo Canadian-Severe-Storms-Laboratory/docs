@@ -6,6 +6,6 @@ interface Props {
 const { class: className = '' } = Astro.props;
 ---
 
-<div class={`accordion-group my-6 space-y-2 not-prose ${className}`}>
+<div class={`not-prose my-6 space-y-2 ${className}`}>
   <slot />
 </div>

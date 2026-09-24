@@ -1,0 +1,122 @@
+---
+title: "Alerts"
+description: "ECCC weather alerts as GeoJSON, including storm-based warnings, and the forecast zones they cover."
+group: "Raindrop API"
+order: 4
+icon: "bell"
+---
+
+import { Endpoint, ParamField, ResponseField } from '@/components/mdx';
+
+Raindrop ingests Environment and Climate Change Canada's public alerts: watches, warnings, advisories and statements. They arrive in Common Alerting Protocol (CAP) format and are served as GeoJSON. Only the English text is kept.
+
+## Alerts
+
+<Endpoint method="GET" base="/api/v1" path="/alerts" />
+
+Returns a GeoJSON `FeatureCollection` of alerts. Each feature's geometry is a `MultiPolygon` of the affected areas, and its properties describe the alert.
+
+<ParamField query="start" type="datetime">
+  If set, returns every stored revision whose validity overlaps `start` to `end`. If left out, returns only the current revision of each alert that's active now.
+</ParamField>
+
+<ParamField query="end" type="datetime" default="now">
+  End of the window. Only used with `start`.
+</ParamField>
+
+```json
+{
+  "type": "Feature",
+  "id": "urn:oid:2.49.0.1.124.3374137668.2026",
+  "geometry": { "type": "MultiPolygon", "coordinates": [] },
+  "properties": {
+    "id": "urn:oid:2.49.0.1.124.3374137668.2026",
+    "issuer": "Environment Canada",
+    "messageType": "Update",
+    "status": "Active",
+    "alertType": "Advisory",
+    "alertColour": "Yellow",
+    "alertImpact": "Moderate",
+    "alertConfidence": "High",
+    "alertHeadline": "FROST - IN EFFECT",
+    "event": "frost",
+    "effectiveTime": "2026-09-24T13:36:00Z",
+    "expiryTime": "2026-09-25T05:36:00Z",
+    "eventEndTime": "2026-09-25T14:00:00Z",
+    "sent": "2026-09-24T13:36:00Z",
+    "riskRanking": 8,
+    "coverage": "Gatineau",
+    "designationCode": "WZ_96_97_CWTO",
+    "previousIds": ["urn:oid:2.49.0.1.124.1371159753.2026"],
+    "areas": [
+      { "description": "Gatineau", "kind": "Coverage", "threatStatus": "None", "clcCode": "031100", "polygons": [] }
+    ]
+  }
+}
+```
+
+<ResponseField name="alertType" type="string">
+  `Statement`, `Advisory`, `Watch` or `Warning`.
+</ResponseField>
+
+<ResponseField name="alertColour" type="string">
+  ECCC's colour-coded severity: `Yellow`, `Orange` or `Red`.
+</ResponseField>
+
+<ResponseField name="alertImpact, alertConfidence" type="string">
+  `Low`, `Moderate`, `High`, or `Extreme` (impact) or `Very High` (confidence).
+</ResponseField>
+
+<ResponseField name="messageType" type="string">
+  `Alert` for a new alert, `Update` for a revision, or `Cancel`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `Active`, `Superseded` (replaced by a newer revision), `Ended` or `Cancelled`.
+</ResponseField>
+
+<ResponseField name="previousIds" type="string[]">
+  IDs of earlier revisions of this alert, oldest first. Use this to group revisions into one alert.
+</ResponseField>
+
+<ResponseField name="effectiveTime, expiryTime" type="datetime">
+  When this revision is valid.
+</ResponseField>
+
+<ResponseField name="eventEndTime" type="datetime">
+  When the weather itself is expected to end. It's usually earlier than `expiryTime`.
+</ResponseField>
+
+<ResponseField name="riskRanking" type="integer">
+  ECCC's risk ranking. `1` is the highest risk.
+</ResponseField>
+
+<ResponseField name="areas" type="object[]">
+  The areas the alert covers. Each has a `kind` (`Coverage` for a forecast zone, `ThreatArea` for a storm polygon), a `clcCode` for forecast zones, and `polygons` as `{lat, lon}` rings. Use the feature geometry for drawing; it's standard GeoJSON.
+</ResponseField>
+
+<ResponseField name="storm" type="object">
+  Storm-based alerts only. The storm's `speedKmh`, `directionDegrees`, centroid `point`, `geometryType` (`IsolatedCell`, `Line` or `Area`), observation `time`, and text descriptions of its position and motion.
+</ResponseField>
+
+### Storm-based alerts
+
+ECCC issues some severe thunderstorm and tornado warnings as polygons that follow the storm rather than covering whole forecast zones. A storm-based alert is updated every few minutes as the storm moves. Each update is a new revision with a longer `previousIds` chain. The alert ends with a final revision whose `status` is `Ended`.
+
+When storms merge or split, ECCC ends the old alerts and starts new ones with an empty `previousIds`. The old and new alerts aren't linked.
+
+For these alerts, `areas` holds only the storm polygons (`kind: "ThreatArea"`), so the feature geometry is the storm itself.
+
+## Alert zones
+
+<Endpoint method="GET" base="/api/v1" path="/alerts/zones" />
+
+The polygons embedded in CAP alerts are coarse and overlap one another. For a cleaner map, draw `Coverage` areas from ECCC's forecast zone boundaries, looked up by each area's `clcCode`.
+
+<ParamField query="codes" type="string" required>
+  Comma-separated zone codes, up to 200. Unknown codes are skipped; fall back to the alert's own polygons for those.
+</ParamField>
+
+Returns a GeoJSON `FeatureCollection`. Each feature's `id` is the zone code, and its properties are `clcCode`, `nameEn`, `nameFr`, `areaKm2` and `centroid`. Treat codes as opaque strings: air quality zones use compound codes like `082720-082732`.
+
+Zone boundaries rarely change, so cache them. Responses carry an `ETag`; send it back in `If-None-Match` to get a `304` when nothing has changed.

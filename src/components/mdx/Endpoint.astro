@@ -1,0 +1,25 @@
+---
+// An HTTP method and path, shown at the top of an endpoint's section.
+interface Props {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  path: string;
+  /** Base URL shown before the path, e.g. https://raindrop.cssl.ca/api/v1 */
+  base?: string;
+}
+
+const { method, path, base } = Astro.props;
+
+const methodColor = {
+  GET: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+  POST: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
+  PUT: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  DELETE: 'bg-tempest/10 text-tempest',
+}[method];
+---
+
+<div class="not-prose my-4 flex items-center gap-2.5 overflow-x-auto rounded-lg border border-border/80 bg-muted/30 px-3 py-2 font-mono text-[13px]">
+  <span class={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold ${methodColor}`}>{method}</span>
+  <span class="whitespace-nowrap text-foreground">
+    {base && <span class="text-muted-foreground">{base}</span>}{path}
+  </span>
+</div>

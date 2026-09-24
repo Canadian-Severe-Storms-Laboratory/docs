@@ -1,62 +1,41 @@
 ---
-title: "Architecture Overview"
-description: "High-level overview of the CSSL Weather Intelligence web application (weather.cssl.ca), data services, and mapping stack."
+title: "System overview"
+description: "How Weather Intelligence, Raindrop, Cyclone and CSSL accounts fit together."
 group: "Architecture"
 order: 1
-icon: "layers"
+icon: "waypoints"
 ---
 
-import Callout from '@/components/mdx/Callout.astro';
-import CardGroup from '@/components/mdx/CardGroup.astro';
-import Card from '@/components/mdx/Card.astro';
-import Tabs from '@/components/mdx/Tabs.astro';
-import TabItem from '@/components/mdx/TabItem.astro';
-import SystemTopologyGraph from '@/components/graphs/SystemTopologyGraph';
+import ServiceDiagram from '@/components/ServiceDiagram.astro';
 
-The CSSL Weather Intelligence ecosystem combines real-time observation ingestion, high-speed forecast model tiling, and hardware-accelerated WebGL visualization.
+Weather Intelligence is a browser app with no backend of its own. It reads observations and alerts from Raindrop, gridded data from Cyclone, and account information from CSSL's auth service. The two data services are independent: they ingest from different sources, store data differently and are deployed separately.
 
-## System Topology
+<ServiceDiagram />
 
-The client application connects to two decoupled backends, ensuring that service interruptions in model processing never degrade observation streams. Explore the interactive topology below: drag to pan, scroll to zoom, or click any node to inspect architectural specifications.
+## Raindrop
 
-<SystemTopologyGraph client:load />
+Raindrop stores point data: station observations, alerts, outlooks and reports. It runs as two processes that share one database. One ingests data; the other serves the [REST API](/docs/raindrop/overview).
 
-## Architectural Components
+- **Stack:** C# on .NET 10 with ASP.NET Core minimal APIs.
+- **Storage:** PostgreSQL with TimescaleDB. Observations go in a hypertable split into daily chunks, and chunks older than a day are compressed.
+- **Ingest:** subscribes to MSC Datamart over AMQP for station reports and alerts as they're published, and polls other networks on fixed schedules. Readings are converted to [standard units](/docs/raindrop/observations#units) and [quality-checked](/docs/architecture/data-sources#quality-control) before they're stored.
 
-### 1. The Mapping Stack
-The core interactive map is built with **MapLibre GL** and **Deck.gl** (`react-map-gl/maplibre`):
-- **MapLibre** provides high-frame-rate vector basemap rendering via ESRI basemap tiles.
-- **Deck.gl** sits as an overlay for data visualization layers (`src/lib/layers/`), rendering tens of thousands of observation pins, wind barbs, and animated streamlines at 60 FPS.
-- The map mounts independently of the station feed—a delayed Raindrop response never blocks forecast overlays.
+## Cyclone
 
-### 2. Raindrop Backend
-Raindrop handles station observation ingestion, metadata cataloging, and alert dissemination:
-- Validated via **Zod** schemas to guarantee typed safety end-to-end.
-- Supports authenticated sessions with cookie refresh workflows (`credentials: 'include'`).
-- Provides automated data quality flags (`QC_PASSED`, `QC_SUSPECT`, `QC_REJECTED`).
+Cyclone stores gridded data: model output, radar, satellite and lightning. It has three roles that can run together or as separate services:
 
-### 3. Cyclone-serve Forecast Engine
-Cyclone-serve ingests raw numerical weather prediction (NWP) model outputs (GRIB2) and pre-computes tiled data grids:
-- Projects grids across complex projections (Rotated Lat/Lon, Lambert Conformal).
-- Evaluates thermodynamic profiles: DGZ (Dendritic Growth Zone), convective available potential energy (CAPE), and wind shear.
-- Client-side caching handled via a Service Worker (`sw.js`).
+- **Ingest** downloads model output and observations as they're published. For NOAA models it fetches only the fields it needs, using byte-range requests.
+- **Compute** derives fields such as CAPE, storm-relative helicity and composite indices on the GPU, hour by hour as each run arrives.
+- **Serve** is the [HTTP API](/docs/cyclone/overview). It reprojects data to Web Mercator tiles on request.
 
-<Callout type="warning" title="Decoupled Resilience">
-  Raindrop and Cyclone-serve run on isolated infrastructure clusters. If Cyclone-serve undergoes model ingestion maintenance, the live Weather Intelligence map remains fully operational.
-</Callout>
+Cyclone keeps every model on its native grid (rotated latitude-longitude, Lambert conformal, polar stereographic or geostationary) as Zarr arrays packed to 16-bit integers, with a SQLite catalog of runs. It's written in Rust.
 
-## Three View Modes
+Cyclone also processes radar itself. It ingests single-site volumes from ECCC's radar network and from US NEXRAD sites, then runs quality control, velocity dealiasing and azimuthal shear on them.
 
-The interface operates across three temporal modes:
+## Weather Intelligence
 
-<Tabs labels={["Historical", "Nowcast (Live)", "Forecast"]}>
-  <TabItem default={true}>
-    **Historical Mode** allows researchers and forecasters to scrub back in time to analyze high-impact weather events, tornadic supercells, and squall lines with minute-by-minute granularity.
-  </TabItem>
-  <TabItem>
-    **Nowcast Mode** displays current surface observations refreshed every 60 seconds, accompanied by live CAP warning polygons, NEXRAD radar reflectivity, and real-time wind barbs.
-  </TabItem>
-  <TabItem>
-    **Forecast Mode** renders numerical forecast model outputs up to 48 hours into the future, providing soundings, hourly surface fields, and severe convective outlooks.
-  </TabItem>
-</Tabs>
+[Weather Intelligence](/docs/architecture/weather-intelligence) is a single-page React app built with Vite. MapLibre GL draws the basemap (from Esri), and deck.gl draws the data layers on top. Model fields are fetched as Cyclone [data tiles](/docs/cyclone/tiles) and coloured in the browser, so changing a colour scale doesn't need new data from the server. A service worker keeps recently used tiles in memory, which makes scrubbing through forecast hours fast.
+
+## Accounts
+
+CSSL accounts live at `auth.cssl.ca`, which issues JWTs signed with ES256. Each token carries the user's plan (`free`, `pro` or `commercial`) and any organization memberships. Raindrop and Cyclone verify tokens against the auth service's published keys and make their own access decisions from the plan. See [Authentication](/docs/authentication).

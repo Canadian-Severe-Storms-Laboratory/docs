@@ -3,25 +3,18 @@ interface Props {
   name: string;
   type: string;
   required?: boolean;
-  class?: string;
 }
 
-const { name, type, required = false, class: className = '' } = Astro.props;
+const { name, type, required = false } = Astro.props;
 ---
 
-<div class={`border-b border-border/70 py-3.5 not-prose ${className}`}>
-  <div class="flex flex-wrap items-baseline gap-2">
-    <code class="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-sm font-semibold text-foreground">
-      {name}
-    </code>
+<div class="not-prose border-b border-border/70 py-4 first:pt-2 last:border-b-0">
+  <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+    <code class="font-mono font-semibold text-foreground">{name}</code>
     <span class="font-mono text-xs text-muted-foreground">{type}</span>
-    {required && (
-      <span class="rounded bg-tempest/10 px-1.5 py-0.2 text-[10px] font-semibold text-tempest uppercase">
-        Required
-      </span>
-    )}
+    {required && <span class="rounded bg-muted px-1.5 py-px text-[11px] text-muted-foreground">always present</span>}
   </div>
-  <div class="mt-1.5 text-sm leading-relaxed text-foreground/85">
+  <div class="field-body mt-1.5 text-sm leading-relaxed text-foreground/80">
     <slot />
   </div>
 </div>

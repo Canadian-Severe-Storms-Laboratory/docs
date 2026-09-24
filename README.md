@@ -1,39 +1,32 @@
-# CSSL Weather Intelligence Documentation
+# CSSL docs
 
-A high-performance documentation site built with **Astro 5** and **Bun**, styled after **Mintlify** and utilizing the exact theme tokens and brand identity from **CSSL Weather Intelligence** (`~/projects/cssl/mesonet`).
+Documentation for [CSSL Weather Intelligence](https://weather.cssl.ca) and the Raindrop and Cyclone APIs behind it. Built with Astro, MDX and Tailwind CSS, and themed to match Weather Intelligence.
 
-## Getting Started
+## Development
 
-### Prerequisites
-
-- [Bun](https://bun.sh) (v1.4+)
-- Node.js (v22+)
-
-### Commands
+Requires [Bun](https://bun.sh) and Node.js 22.12 or later.
 
 ```bash
-bun install             # Install dependencies
-bun run dev             # Start Astro development server
-bun run build           # Build static production documentation site
-bun run preview         # Preview production build locally
-bun run astro check     # Run TypeScript and Astro typecheck
+bun install
+bun run dev          # http://localhost:4321
+bun run build        # static site in dist/
+bun run astro check  # type-check
 ```
 
-## Adding New Documentation Pages
+## Writing pages
 
-Add `.md` or `.mdx` files into `src/content/docs/`:
+Pages are MDX files in `src/content/docs/`. A file's path sets its URL: `raindrop/alerts.mdx` is served at `/docs/raindrop/alerts`.
 
 ```mdx
 ---
-title: "Your Page Title"
-description: "Brief summary of the page."
-group: "Getting Started" # Sidebar category name
-order: 3                 # Sorting priority
-icon: "rocket"           # Lucide icon name
-badge: "New"             # Optional badge
+title: "Alerts"
+description: "One-sentence summary."
+group: "Raindrop API"   # sidebar section; order is set in src/lib/docs.ts
+order: 4
+icon: "bell"            # name from src/components/icons.ts
 ---
 
-import { Card, CardGroup, Callout } from '@/components/mdx';
-
-Your content goes here...
+import { Callout, Endpoint } from '@/components/mdx';
 ```
+
+The [Writing docs](src/content/docs/contributing/writing-docs.mdx) page lists every frontmatter field and component, with examples. Check facts against the service code ([raindrop](https://github.com/Canadian-Severe-Storms-Laboratory/raindrop), [cyclone](https://github.com/Canadian-Severe-Storms-Laboratory/cyclone), [mesonet](https://github.com/Canadian-Severe-Storms-Laboratory/mesonet)), and use real API responses in examples.

@@ -1,19 +1,6 @@
 ---
-import {
-  ArrowRight,
-  BookOpen,
-  Code,
-  Compass,
-  Cpu,
-  Database,
-  ExternalLink,
-  Layers,
-  Rocket,
-  Shield,
-  Sparkles,
-  Terminal,
-  Zap,
-} from 'lucide-astro';
+import { ArrowRight, ArrowUpRight } from 'lucide-astro';
+import { getIcon } from '../icons';
 
 interface Props {
   title: string;
@@ -22,49 +9,35 @@ interface Props {
   class?: string;
 }
 
-const { title, href, icon = 'zap', class: className = '' } = Astro.props;
+const { title, href, icon, class: className = '' } = Astro.props;
 
 const isExternal = href?.startsWith('http');
 const Tag = href ? 'a' : 'div';
+const Icon = icon ? getIcon(icon) : null;
 ---
 
 <Tag
   href={href}
   target={isExternal ? '_blank' : undefined}
   rel={isExternal ? 'noopener noreferrer' : undefined}
-  data-card=""
-  class={`not-prose card-root group relative flex flex-col justify-between rounded-xl border border-border/80 bg-card p-5 text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-tempest/60 hover:shadow-md no-underline hover:no-underline ${href ? 'cursor-pointer' : ''} ${className}`}
-  style="text-decoration: none;"
+  class={`not-prose group flex flex-col rounded-xl border border-border/80 bg-card p-5 text-card-foreground transition-colors ${href ? 'hover:border-tempest/50' : ''} ${className}`}
 >
-  <div class="no-underline" style="text-decoration: none;">
-    <div class="mb-3.5 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-tempest/20 bg-tempest/10 text-tempest transition-transform duration-200 group-hover:scale-105 group-hover:bg-tempest group-hover:text-white">
-      {icon === 'zap' && <Zap class="h-5 w-5" />}
-      {icon === 'book-open' && <BookOpen class="h-5 w-5" />}
-      {icon === 'code' && <Code class="h-5 w-5" />}
-      {icon === 'terminal' && <Terminal class="h-5 w-5" />}
-      {icon === 'layers' && <Layers class="h-5 w-5" />}
-      {icon === 'cpu' && <Cpu class="h-5 w-5" />}
-      {icon === 'compass' && <Compass class="h-5 w-5" />}
-      {icon === 'database' && <Database class="h-5 w-5" />}
-      {icon === 'shield' && <Shield class="h-5 w-5" />}
-      {icon === 'sparkles' && <Sparkles class="h-5 w-5" />}
-      {icon === 'rocket' && <Rocket class="h-5 w-5" />}
-      {!['zap', 'book-open', 'code', 'terminal', 'layers', 'cpu', 'compass', 'database', 'shield', 'sparkles', 'rocket'].includes(icon) && (
-        <Zap class="h-5 w-5" />
-      )}
+  {Icon && (
+    <div class="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-tempest/20 bg-tempest/10 text-tempest">
+      <Icon class="h-[18px] w-[18px]" />
     </div>
+  )}
 
-    <h3 class="flex items-center justify-between text-base font-semibold tracking-tight text-foreground transition-colors group-hover:text-tempest no-underline" style="text-decoration: none;">
-      <span class="no-underline" style="text-decoration: none;">{title}</span>
-      {href && (
-        <span class="text-muted-foreground/60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-tempest no-underline">
-          {isExternal ? <ExternalLink class="h-4 w-4" /> : <ArrowRight class="h-4 w-4" />}
-        </span>
-      )}
-    </h3>
+  <h3 class="flex items-center justify-between gap-2 text-[15px] font-semibold tracking-tight text-foreground">
+    <span>{title}</span>
+    {href && (
+      <span class="text-muted-foreground/60 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-tempest">
+        {isExternal ? <ArrowUpRight class="h-4 w-4" /> : <ArrowRight class="h-4 w-4" />}
+      </span>
+    )}
+  </h3>
 
-    <div class="mt-2 text-sm leading-relaxed text-muted-foreground no-underline" style="text-decoration: none;">
-      <slot />
-    </div>
+  <div class="card-body mt-1.5 text-sm leading-relaxed text-muted-foreground">
+    <slot />
   </div>
 </Tag>

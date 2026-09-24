@@ -1,5 +1,5 @@
 ---
-import { Github, Menu, Search } from 'lucide-astro';
+import { ArrowUpRight, Github, Menu, Search } from 'lucide-astro';
 import ThemeToggle from './ThemeToggle.astro';
 
 interface Props {
@@ -7,123 +7,89 @@ interface Props {
 }
 
 const { currentPath = '' } = Astro.props;
+
+const sections = [
+  { label: 'Raindrop API', href: '/docs/raindrop/overview', prefix: '/docs/raindrop' },
+  { label: 'Cyclone API', href: '/docs/cyclone/overview', prefix: '/docs/cyclone' },
+  { label: 'Architecture', href: '/docs/architecture/overview', prefix: '/docs/architecture' },
+];
+
+const inSection = sections.some((s) => currentPath.startsWith(s.prefix));
+const nav = [
+  { label: 'Guides', href: '/docs', active: !inSection && !currentPath.startsWith('/docs/contributing') },
+  ...sections.map((s) => ({ ...s, active: currentPath.startsWith(s.prefix) })),
+];
 ---
 
-<header class="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
-  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-    <!-- Left: Brand Logo & Docs Tag -->
-    <div class="flex items-center gap-4">
-      <!-- Mobile sidebar toggle -->
+<header class="sticky top-0 z-40 w-full border-b border-border/80 bg-background/85 backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:px-6 lg:px-8">
+    <button
+      type="button"
+      id="mobile-sidebar-toggle"
+      class="-ml-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer"
+      aria-label="Open navigation"
+      aria-controls="sidebar"
+      aria-expanded="false"
+    >
+      <Menu class="h-5 w-5" />
+    </button>
+
+    <a href="/docs" class="flex shrink-0 items-center gap-2.5" aria-label="CSSL Weather Intelligence docs home">
+      <img src="/cssl_intel_light.svg" alt="" class="h-[22px] w-auto dark:hidden" />
+      <img src="/cssl_intel_dark.svg" alt="" class="hidden h-[22px] w-auto dark:block" />
+      <span class="hidden border-l border-border pl-2.5 text-sm font-medium text-muted-foreground sm:inline">
+        Docs
+      </span>
+    </a>
+
+    <nav class="ml-6 hidden items-center gap-1 text-sm lg:flex" aria-label="Sections">
+      {nav.map((item) => (
+        <a
+          href={item.href}
+          aria-current={item.active ? 'page' : undefined}
+          class={`rounded-md px-2.5 py-1.5 transition-colors ${
+            item.active ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="ml-auto flex items-center gap-1 sm:gap-2">
       <button
         type="button"
-        id="mobile-sidebar-toggle"
-        class="inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground md:hidden cursor-pointer"
-        aria-label="Toggle navigation menu"
-      >
-        <Menu class="h-5 w-5" />
-      </button>
-
-      <a href="/docs" class="flex items-center gap-3 transition-opacity hover:opacity-90">
-        <!-- Exact CSSL Weather Intelligence logo lockup from mesonet -->
-        <div class="flex shrink-0 items-center">
-          <img
-            src="/cssl_intel_light.svg"
-            alt="CSSL Weather Intelligence"
-            class="h-[22px] sm:h-[25px] w-auto shrink-0 dark:hidden"
-          />
-          <img
-            src="/cssl_intel_dark.svg"
-            alt="CSSL Weather Intelligence"
-            class="hidden h-[22px] sm:h-[25px] w-auto shrink-0 dark:block"
-          />
-        </div>
-        <div class="hidden h-4 w-px bg-border/80 shrink-0 sm:block" aria-hidden="true"></div>
-        <span class="rounded-full border border-tempest/30 bg-tempest/10 px-2 py-0.5 text-[10px] font-semibold text-tempest tracking-wider uppercase">
-          Docs
-        </span>
-      </a>
-    </div>
-
-    <!-- Center: Mintlify Search Trigger -->
-    <div class="flex flex-1 justify-center px-4 max-w-md">
-      <button
-        type="button"
-        id="search-trigger"
         data-search-trigger
-        class="group flex w-full max-w-xs items-center justify-between rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground transition-all hover:border-tempest/50 hover:bg-muted/70 hover:text-foreground cursor-pointer sm:w-64"
+        aria-label="Search docs"
+        class="group flex h-9 items-center gap-2 rounded-lg border border-border/80 bg-muted/40 px-2.5 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground cursor-pointer sm:w-56 sm:px-3"
       >
-        <span class="flex items-center gap-2">
-          <Search class="h-3.5 w-3.5 text-muted-foreground group-hover:text-tempest transition-colors" />
-          <span>Search docs...</span>
-        </span>
-        <kbd class="hidden items-center gap-0.5 rounded border border-border/80 bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground sm:inline-flex">
-          <span class="text-xs">⌘</span>K
+        <Search class="h-4 w-4 shrink-0" />
+        <span class="hidden flex-1 text-left sm:inline">Search…</span>
+        <kbd class="hidden rounded border border-border/80 bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium sm:inline">
+          ⌘K
         </kbd>
       </button>
-    </div>
 
-    <!-- Right: Navigation Links, App Link, Theme Toggle -->
-    <div class="flex items-center gap-2 sm:gap-3">
-      <nav class="hidden items-center gap-5 text-sm font-medium text-muted-foreground md:flex">
-        <a
-          href="/docs"
-          class={`transition-colors hover:text-foreground ${
-            currentPath === '/docs' || currentPath === '/docs/' ? 'text-tempest font-semibold' : ''
-          }`}
-        >
-          Guides
-        </a>
-        <a
-          href="/docs/architecture/overview"
-          class={`transition-colors hover:text-foreground ${
-            currentPath.includes('/architecture') ? 'text-tempest font-semibold' : ''
-          }`}
-        >
-          Architecture
-        </a>
-        <a
-          href="/docs/api/overview"
-          class={`transition-colors hover:text-foreground ${
-            currentPath.includes('/api') ? 'text-tempest font-semibold' : ''
-          }`}
-        >
-          API
-        </a>
-        <a
-          href="/docs/components/showcase"
-          class={`transition-colors hover:text-foreground ${
-            currentPath.includes('/components') ? 'text-tempest font-semibold' : ''
-          }`}
-        >
-          Components
-        </a>
-      </nav>
-
-      <div class="hidden h-4 w-px bg-border md:block"></div>
-
-      <!-- Weather Intelligence Portal Link -->
       <a
         href="https://weather.cssl.ca"
         target="_blank"
         rel="noopener noreferrer"
-        class="hidden items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-tempest/40 hover:bg-muted hover:text-foreground transition-all sm:inline-flex"
+        class="hidden h-9 items-center gap-1 rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground xl:inline-flex"
       >
-        <span class="h-2 w-2 rounded-full bg-tempest"></span>
-        <span>Weather Intelligence</span>
+        Weather Intelligence
+        <ArrowUpRight class="h-3.5 w-3.5" />
       </a>
 
-      <!-- External Links -->
       <a
         href="https://github.com/Canadian-Severe-Storms-Laboratory"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="GitHub Repository"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        aria-label="CSSL on GitHub"
+        class="hidden h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
       >
         <Github class="h-4 w-4" />
       </a>
 
-      <!-- Theme Switcher -->
       <ThemeToggle />
     </div>
   </div>
