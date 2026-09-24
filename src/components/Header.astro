@@ -9,14 +9,14 @@ interface Props {
 const { currentPath = '' } = Astro.props;
 
 const sections = [
-  { label: 'Raindrop API', href: '/docs/raindrop/overview', prefix: '/docs/raindrop' },
-  { label: 'Cyclone API', href: '/docs/cyclone/overview', prefix: '/docs/cyclone' },
-  { label: 'Architecture', href: '/docs/architecture/overview', prefix: '/docs/architecture' },
+  { label: 'Raindrop API', href: '/raindrop/overview', prefix: '/raindrop' },
+  { label: 'Cyclone API', href: '/cyclone/overview', prefix: '/cyclone' },
+  { label: 'Architecture', href: '/architecture/overview', prefix: '/architecture' },
 ];
 
 const inSection = sections.some((s) => currentPath.startsWith(s.prefix));
 const nav = [
-  { label: 'Guides', href: '/docs', active: !inSection && !currentPath.startsWith('/docs/contributing') },
+  { label: 'Guides', href: '/', active: !inSection && !currentPath.startsWith('/contributing') },
   ...sections.map((s) => ({ ...s, active: currentPath.startsWith(s.prefix) })),
 ];
 ---
@@ -35,7 +35,7 @@ const nav = [
     </button>
 
     <a
-      href="/docs"
+      href="/"
       transition:persist="header-logo"
       class="flex shrink-0 items-center gap-2.5"
       aria-label="CSSL Weather Intelligence docs home"

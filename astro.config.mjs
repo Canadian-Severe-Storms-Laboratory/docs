@@ -41,7 +41,7 @@ export default defineConfig({
   integrations: [mdx(), sitemap()],
 
   redirects: {
-    '/': '/docs',
+    '/docs': '/',
   },
 
   vite: {

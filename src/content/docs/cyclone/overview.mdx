@@ -21,14 +21,14 @@ Every endpoint is `GET`. There's no version prefix.
 
 | Endpoint | Returns |
 | --- | --- |
-| [`/models`](/docs/cyclone/models#models) | Every model with its forecast-hour axis |
-| [`/models/coverage`](/docs/cyclone/models#coverage) | Each model's footprint, as GeoJSON |
-| [`/models/{model}/runs`](/docs/cyclone/models#runs) | Available runs, newest first |
-| [`/models/{model}/products`](/docs/cyclone/models#products) | Fields, units and tile encoding |
-| [`/models/{model}/products/{product}/data/{z}/{x}/{y}`](/docs/cyclone/tiles) | A 256×256 map tile of values |
-| [`/models/{model}/point`](/docs/cyclone/point-queries#one-point) | Several fields at one grid point |
-| [`/models/{model}/series`](/docs/cyclone/point-queries#time-series) | Every forecast hour at one grid point |
-| [`/capabilities`](/docs/authentication#checking-access) | What your credential can access |
+| [`/models`](/cyclone/models#models) | Every model with its forecast-hour axis |
+| [`/models/coverage`](/cyclone/models#coverage) | Each model's footprint, as GeoJSON |
+| [`/models/{model}/runs`](/cyclone/models#runs) | Available runs, newest first |
+| [`/models/{model}/products`](/cyclone/models#products) | Fields, units and tile encoding |
+| [`/models/{model}/products/{product}/data/{z}/{x}/{y}`](/cyclone/tiles) | A 256×256 map tile of values |
+| [`/models/{model}/point`](/cyclone/point-queries#one-point) | Several fields at one grid point |
+| [`/models/{model}/series`](/cyclone/point-queries#time-series) | Every forecast hour at one grid point |
+| [`/capabilities`](/authentication#checking-access) | What your credential can access |
 
 Cyclone also serves single-site radar volumes under `/radar` (Pro plan). They use a binary format that isn't documented yet.
 
@@ -53,16 +53,16 @@ Cyclone also serves recent observations through the same interface, with one run
 | `mrms-mesh-30min` | MRMS Maximum Expected Size of Hail (MESH), 30-minute maximum | Every 30 minutes |
 | `mrms-nldn-5min`, `mrms-nldn-30min` | MRMS lightning density from NLDN | Every 5 or 30 minutes |
 
-Access varies by model. See [Authentication](/docs/authentication#plans), or call `/capabilities`. `/models` always lists everything the server carries, whether or not you can read it.
+Access varies by model. See [Authentication](/authentication#plans), or call `/capabilities`. `/models` always lists everything the server carries, whether or not you can read it.
 
 ## Runs and hours
 
 Data requests take a **run** and an **hour**.
 
-- **`run`** is the model's initialization time, in the form `YYYYMMDDTHHMMSSZ`, such as `20260924T120000Z`. List valid values with [`/runs`](/docs/cyclone/models#runs). Cyclone keeps only the last few runs of each model, so don't construct run stamps yourself.
+- **`run`** is the model's initialization time, in the form `YYYYMMDDTHHMMSSZ`, such as `20260924T120000Z`. List valid values with [`/runs`](/cyclone/models#runs). Cyclone keeps only the last few runs of each model, so don't construct run stamps yourself.
 - **`hour`** is an **index** into the model's `forecast_hour_axis`, not a number of hours.
 
-For hourly models that start at hour 0, the two are the same. For the others they aren't. NBM's axis starts at 1, so index 0 is forecast hour 1. GFS goes 3-hourly after hour 120, so index 130 is forecast hour 150. The valid time is `run + forecast_hour_axis[hour]` hours. [`/models`](/docs/cyclone/models#models) returns each model's axis.
+For hourly models that start at hour 0, the two are the same. For the others they aren't. NBM's axis starts at 1, so index 0 is forecast hour 1. GFS goes 3-hourly after hour 120, so index 130 is forecast hour 150. The valid time is `run + forecast_hour_axis[hour]` hours. [`/models`](/cyclone/models#models) returns each model's axis.
 
 For observation sources, each run is a UTC day and the axis counts **minutes** since midnight.
 
@@ -89,9 +89,9 @@ Errors are JSON objects with a message and a stable code:
 | Status | Meaning |
 | --- | --- |
 | `400` | Malformed request, such as a bad run stamp or passing both `run` and `time` |
-| `401`, `403` | Missing credential, or no access. See [Authentication](/docs/authentication#when-a-request-is-refused). |
+| `401`, `403` | Missing credential, or no access. See [Authentication](/authentication#when-a-request-is-refused). |
 | `418` | The data doesn't exist: an unknown product, an hour outside the axis, or a tile with nothing in it |
-| `422` | The product can't be served as tiles. Use [point queries](/docs/cyclone/point-queries) instead. |
+| `422` | The product can't be served as tiles. Use [point queries](/cyclone/point-queries) instead. |
 | `503` | Server busy. Retry after the `Retry-After` delay. |
 | `504` | The request took longer than 30 seconds |
 

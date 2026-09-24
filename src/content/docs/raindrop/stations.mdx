@@ -75,7 +75,7 @@ Returns metadata for every station, as an object keyed by station ID. Without `w
 ```
 
 <ResponseField name="network" type="string">
-  The data provider, as named by the source feed. Examples: `MSC`, `NAV CANADA`, `ON-MTO`, `BC-FOR`, `HYDROQUEBEC`, `UPEI`, `HailSTORM` and `NWS`. See [Data sources](/docs/architecture/data-sources#station-networks).
+  The data provider, as named by the source feed. Examples: `MSC`, `NAV CANADA`, `ON-MTO`, `BC-FOR`, `HYDROQUEBEC`, `UPEI`, `HailSTORM` and `NWS`. See [Data sources](/architecture/data-sources#station-networks).
 </ResponseField>
 
 <ResponseField name="name" type="string">
@@ -99,11 +99,11 @@ Returns metadata for every station, as an object keyed by station ID. Without `w
 </ResponseField>
 
 <ResponseField name="types" type="ObservationType[]">
-  The series this station reports. A station can report the same variable more than once, with different averaging intervals. See [Series](/docs/raindrop/observations#series).
+  The series this station reports. A station can report the same variable more than once, with different averaging intervals. See [Series](/raindrop/observations#series).
 </ResponseField>
 
 <ResponseField name="qualities" type="string[]">
-  The distinct [quality codes](/docs/raindrop/observations#quality-flags) of the station's latest readings over the last 12 hours, worst first. An empty array means the station hasn't reported any map variables in that time. Use this to hide faulty stations without fetching readings.
+  The distinct [quality codes](/raindrop/observations#quality-flags) of the station's latest readings over the last 12 hours, worst first. An empty array means the station hasn't reported any map variables in that time. Use this to hide faulty stations without fetching readings.
 </ResponseField>
 
 ## One station
@@ -176,7 +176,7 @@ Stations with nothing in the window are left out.
 </ResponseField>
 
 <ResponseField name="readings[].quality" type="object">
-  `baseQuality` and `reasonQuality` codes. See [Quality flags](/docs/raindrop/observations#quality-flags).
+  `baseQuality` and `reasonQuality` codes. See [Quality flags](/raindrop/observations#quality-flags).
 </ResponseField>
 
 <ResponseField name="readings[].age" type="integer">

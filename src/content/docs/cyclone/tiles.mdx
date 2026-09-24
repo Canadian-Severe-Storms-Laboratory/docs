@@ -15,11 +15,11 @@ Returns one 256×256 tile of a product in the standard XYZ Web Mercator tiling, 
 ## Parameters
 
 <ParamField path="model" type="string" required>
-  Model ID from [`/models`](/docs/cyclone/models#models).
+  Model ID from [`/models`](/cyclone/models#models).
 </ParamField>
 
 <ParamField path="product" type="string" required>
-  Product name from [`/products`](/docs/cyclone/models#products). Case-sensitive.
+  Product name from [`/products`](/cyclone/models#products). Case-sensitive.
 </ParamField>
 
 <ParamField path="z, x, y" type="integer" required>
@@ -27,11 +27,11 @@ Returns one 256×256 tile of a product in the standard XYZ Web Mercator tiling, 
 </ParamField>
 
 <ParamField query="run" type="string">
-  Run stamp from [`/runs`](/docs/cyclone/models#runs), such as `20260924T120000Z`. Required unless you pass `time`.
+  Run stamp from [`/runs`](/cyclone/models#runs), such as `20260924T120000Z`. Required unless you pass `time`.
 </ParamField>
 
 <ParamField query="hour" type="integer" default="0">
-  Index into the model's `forecast_hour_axis`. This is not the forecast hour itself; see [Runs and hours](/docs/cyclone/overview#runs-and-hours).
+  Index into the model's `forecast_hour_axis`. This is not the forecast hour itself; see [Runs and hours](/cyclone/overview#runs-and-hours).
 </ParamField>
 
 <ParamField query="time" type="datetime">

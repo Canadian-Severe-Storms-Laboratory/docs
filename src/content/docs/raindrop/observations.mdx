@@ -10,7 +10,7 @@ import { Callout, Endpoint, ParamField } from '@/components/mdx';
 
 ## Series
 
-Every value Raindrop stores belongs to a **series**: one variable at one station, measured one way. The `types` array in [station details](/docs/raindrop/stations#station-details) lists a station's series. Each one has:
+Every value Raindrop stores belongs to a **series**: one variable at one station, measured one way. The `types` array in [station details](/raindrop/stations#station-details) lists a station's series. Each one has:
 
 | Field | Meaning |
 | --- | --- |
@@ -29,7 +29,7 @@ One station often has several series for the same variable. The NAV CANADA stati
 
 <Endpoint method="POST" base="/api/v1" path="/observations/series" />
 
-Returns the readings of one variable at one station between `start` and `end`. The window is subject to your plan's [lookback](/docs/raindrop/overview#time-windows).
+Returns the readings of one variable at one station between `start` and `end`. The window is subject to your plan's [lookback](/raindrop/overview#time-windows).
 
 <ParamField query="start" type="datetime" required>
   Start of the window.
@@ -146,4 +146,4 @@ Every reading carries a `quality` object with two codes:
 
 `reasonQuality` says which check tripped: `Range`, `Change`, `Increase`, `Decrease`, `Inert`, `Difference`, `GreaterThan`, `LessThan`, `Disagree`, `AverageInconsistent`, `ValueType` or `Missing`. It's `None` when nothing tripped and `Unknown` when the source gave no reason.
 
-Readings from ECCC's feed arrive with ECCC's own verdict. Raindrop runs its own checks on any reading that isn't already marked `Good`, which covers every other network. Derived values take the worst quality of their inputs. For details, see [Quality control](/docs/architecture/data-sources#quality-control).
+Readings from ECCC's feed arrive with ECCC's own verdict. Raindrop runs its own checks on any reading that isn't already marked `Good`, which covers every other network. Derived values take the worst quality of their inputs. For details, see [Quality control](/architecture/data-sources#quality-control).

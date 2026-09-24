@@ -11,7 +11,7 @@ import { Callout, Endpoint, ParamField } from '@/components/mdx';
 
 <Endpoint method="POST" base="/api/v1" path="/historical/bulk" />
 
-Exports one or more variables from a station as CSV, one page at a time. There's no window limit. This endpoint needs a Raindrop API key or a CSSL account on the Commercial plan; lower plans get `403`. See [Authentication](/docs/authentication).
+Exports one or more variables from a station as CSV, one page at a time. There's no window limit. This endpoint needs a Raindrop API key or a CSSL account on the Commercial plan; lower plans get `403`. See [Authentication](/authentication).
 
 ## Request
 
@@ -36,7 +36,7 @@ Exports one or more variables from a station as CSV, one page at a time. There's
 </ParamField>
 
 <ParamField body="requests" type="object[]">
-  The series to export. Each entry takes the same fields as the [time series](/docs/raindrop/observations#time-series) body (`name`, `intervalType`, `intervalMinutes`, `calculated`) plus optional filters: `lowerValueBound`, `upperValueBound` and `qualityRange`. Every entry must use the same filters. If you leave `requests` out, every series at the station is exported.
+  The series to export. Each entry takes the same fields as the [time series](/raindrop/observations#time-series) body (`name`, `intervalType`, `intervalMinutes`, `calculated`) plus optional filters: `lowerValueBound`, `upperValueBound` and `qualityRange`. Every entry must use the same filters. If you leave `requests` out, every series at the station is exported.
 </ParamField>
 
 ```bash
@@ -59,7 +59,7 @@ The body is CSV with this header row:
 lat,lon,observation_name,interval_type,interval_minutes,timestamp,value,quality_base,quality_reason,group_bucket_name
 ```
 
-`lat` and `lon` are the station's coordinates. `timestamp` is ISO 8601 UTC. The quality columns hold the [quality flag](/docs/raindrop/observations#quality-flags) codes. Rows are ordered by time, then by series. The response headers tell you what came back:
+`lat` and `lon` are the station's coordinates. `timestamp` is ISO 8601 UTC. The quality columns hold the [quality flag](/raindrop/observations#quality-flags) codes. Rows are ordered by time, then by series. The response headers tell you what came back:
 
 | Header | Meaning |
 | --- | --- |

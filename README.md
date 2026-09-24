@@ -15,7 +15,7 @@ bun run astro check  # type-check
 
 ## Writing pages
 
-Pages are MDX files in `src/content/docs/`. A file's path sets its URL: `raindrop/alerts.mdx` is served at `/docs/raindrop/alerts`.
+Pages are MDX files in `src/content/docs/`. A file's path sets its URL: `raindrop/alerts.mdx` is served at `/raindrop/alerts`.
 
 ```mdx
 ---

@@ -8,7 +8,7 @@ const GROUP_ORDER = ['Getting Started', 'Raindrop API', 'Cyclone API', 'Architec
 const REPO_URL = 'https://github.com/Canadian-Severe-Storms-Laboratory/docs';
 
 export function docUrl(doc: Doc): string {
-  return doc.id === 'index' ? '/docs' : `/docs/${doc.id}`;
+  return doc.id === 'index' ? '/' : `/${doc.id}`;
 }
 
 export function editUrl(doc: Doc): string | undefined {

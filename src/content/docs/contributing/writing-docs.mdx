@@ -22,7 +22,7 @@ import {
   Tabs,
 } from '@/components/mdx';
 
-This site lives in the [`docs`](https://github.com/Canadian-Severe-Storms-Laboratory/docs) repository and is built with Astro. Each page is an MDX file under `src/content/docs/`, and its path sets the URL: `src/content/docs/raindrop/alerts.mdx` becomes `/docs/raindrop/alerts`.
+This site lives in the [`docs`](https://github.com/Canadian-Severe-Storms-Laboratory/docs) repository and is built with Astro. Each page is an MDX file under `src/content/docs/`, and its path sets the URL: `src/content/docs/raindrop/alerts.mdx` becomes `/raindrop/alerts`.
 
 ```bash
 bun install
@@ -76,7 +76,7 @@ import { Callout, Card, CardGroup } from '@/components/mdx';
 ### Cards
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/docs/quickstart">
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
     Links to a page inside the docs.
   </Card>
   <Card title="Weather Intelligence" icon="monitor" href="https://weather.cssl.ca">
@@ -86,7 +86,7 @@ import { Callout, Card, CardGroup } from '@/components/mdx';
 
 ```mdx
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/docs/quickstart">
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
     Links to a page inside the docs.
   </Card>
 </CardGroup>

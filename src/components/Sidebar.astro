@@ -21,7 +21,7 @@ interface Props {
 
 const { currentPath, groups, class: className = '' } = Astro.props;
 
-const cleanCurrent = currentPath.replace(/\/$/, '') || '/docs';
+const cleanCurrent = currentPath.replace(/\/$/, '') || '/';
 ---
 
 <aside
@@ -37,7 +37,7 @@ const cleanCurrent = currentPath.replace(/\/$/, '') || '/docs';
           </h4>
           <ul class="space-y-0.5">
             {group.items.map((item) => {
-              const isActive = cleanCurrent === item.url.replace(/\/$/, '');
+              const isActive = cleanCurrent === (item.url.replace(/\/$/, '') || '/');
               const Icon = getIcon(item.icon);
 
               return (

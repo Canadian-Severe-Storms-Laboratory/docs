@@ -14,11 +14,11 @@ Weather Intelligence is a browser app with no backend of its own. It reads obser
 
 ## Raindrop
 
-Raindrop stores point data: station observations, alerts, outlooks and reports. It runs as two processes that share one database. One ingests data; the other serves the [REST API](/docs/raindrop/overview).
+Raindrop stores point data: station observations, alerts, outlooks and reports. It runs as two processes that share one database. One ingests data; the other serves the [REST API](/raindrop/overview).
 
 - **Stack:** C# on .NET 10 with ASP.NET Core minimal APIs.
 - **Storage:** PostgreSQL with TimescaleDB. Observations go in a hypertable split into daily chunks, and chunks older than a day are compressed.
-- **Ingest:** subscribes to MSC Datamart over AMQP for station reports and alerts as they're published, and polls other networks on fixed schedules. Readings are converted to [standard units](/docs/raindrop/observations#units) and [quality-checked](/docs/architecture/data-sources#quality-control) before they're stored.
+- **Ingest:** subscribes to MSC Datamart over AMQP for station reports and alerts as they're published, and polls other networks on fixed schedules. Readings are converted to [standard units](/raindrop/observations#units) and [quality-checked](/architecture/data-sources#quality-control) before they're stored.
 
 ## Cyclone
 
@@ -26,7 +26,7 @@ Cyclone stores gridded data: model output, radar, satellite and lightning. It ha
 
 - **Ingest** downloads model output and observations as they're published. For NOAA models it fetches only the fields it needs, using byte-range requests.
 - **Compute** derives fields such as CAPE, storm-relative helicity and composite indices on the GPU, hour by hour as each run arrives.
-- **Serve** is the [HTTP API](/docs/cyclone/overview). It reprojects data to Web Mercator tiles on request.
+- **Serve** is the [HTTP API](/cyclone/overview). It reprojects data to Web Mercator tiles on request.
 
 Cyclone keeps every model on its native grid (rotated latitude-longitude, Lambert conformal, polar stereographic or geostationary) as Zarr arrays packed to 16-bit integers, with a SQLite catalog of runs. It's written in Rust.
 
@@ -34,8 +34,8 @@ Cyclone also processes radar itself. It ingests single-site volumes from ECCC's 
 
 ## Weather Intelligence
 
-[Weather Intelligence](/docs/architecture/weather-intelligence) is a single-page React app built with Vite. MapLibre GL draws the basemap (from Esri), and deck.gl draws the data layers on top. Model fields are fetched as Cyclone [data tiles](/docs/cyclone/tiles) and coloured in the browser, so changing a colour scale doesn't need new data from the server. A service worker keeps recently used tiles in memory, which makes scrubbing through forecast hours fast.
+[Weather Intelligence](/architecture/weather-intelligence) is a single-page React app built with Vite. MapLibre GL draws the basemap (from Esri), and deck.gl draws the data layers on top. Model fields are fetched as Cyclone [data tiles](/cyclone/tiles) and coloured in the browser, so changing a colour scale doesn't need new data from the server. A service worker keeps recently used tiles in memory, which makes scrubbing through forecast hours fast.
 
 ## Accounts
 
-CSSL accounts live at `auth.cssl.ca`, which issues JWTs signed with ES256. Each token carries the user's plan (`free`, `pro` or `commercial`) and any organization memberships. Raindrop and Cyclone verify tokens against the auth service's published keys and make their own access decisions from the plan. See [Authentication](/docs/authentication).
+CSSL accounts live at `auth.cssl.ca`, which issues JWTs signed with ES256. Each token carries the user's plan (`free`, `pro` or `commercial`) and any organization memberships. Raindrop and Cyclone verify tokens against the auth service's published keys and make their own access decisions from the plan. See [Authentication](/authentication).

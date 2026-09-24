@@ -21,7 +21,7 @@ Point queries return exact values from the model's native grid, with no reprojec
 Returns one or more fields at one grid cell and one time step.
 
 <ParamField query="run" type="string" required>
-  Run stamp from [`/runs`](/docs/cyclone/models#runs).
+  Run stamp from [`/runs`](/cyclone/models#runs).
 </ParamField>
 
 <ParamField query="hour" type="integer" required>
@@ -29,7 +29,7 @@ Returns one or more fields at one grid cell and one time step.
 </ParamField>
 
 <ParamField query="row, col" type="integer" required>
-  Grid cell, as zero-based indices into the native grid. [`/models/coverage`](/docs/cyclone/models#coverage) gives the grid size as `ny` × `nx`.
+  Grid cell, as zero-based indices into the native grid. [`/models/coverage`](/cyclone/models#coverage) gives the grid size as `ny` × `nx`.
 </ParamField>
 
 <ParamField query="fields" type="string" required>

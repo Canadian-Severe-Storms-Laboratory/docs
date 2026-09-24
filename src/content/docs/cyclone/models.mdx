@@ -39,7 +39,7 @@ Returns an array with one entry per model or observation source. No account is n
 </ResponseField>
 
 <ResponseField name="forecast_hour_axis" type="integer[]">
-  What each `hour` index means: forecast hours for models, minutes since midnight for observation sources. See [Runs and hours](/docs/cyclone/overview#runs-and-hours). The example above is truncated.
+  What each `hour` index means: forecast hours for models, minutes since midnight for observation sources. See [Runs and hours](/cyclone/overview#runs-and-hours). The example above is truncated.
 </ResponseField>
 
 <ResponseField name="forecast_hours" type="integer">
@@ -116,7 +116,7 @@ Returns every field the model provides, with its unit and tile encoding:
 </ResponseField>
 
 <ResponseField name="encoding" type="object">
-  How to decode this product's [data tiles](/docs/cyclone/tiles#decoding). Missing when `range` is `null`; those products can't be served as tiles, only through [point queries](/docs/cyclone/point-queries).
+  How to decode this product's [data tiles](/cyclone/tiles#decoding). Missing when `range` is `null`; those products can't be served as tiles, only through [point queries](/cyclone/point-queries).
 </ResponseField>
 
 <ResponseField name="levels_hpa" type="number[] | null">
@@ -133,4 +133,4 @@ Product names follow the source model's conventions, so they vary between models
 | `…_ISBL` | Pressure levels (use `level`) | `T_ISBL`, `HGT_ISBL`, `U_ISBL`, `ABSV_ISBL` |
 | Lowercase | Computed by CSSL from model output | `sb_cape`, `ml_cin`, `srh_0_1km`, `bulk_shear_0_6km`, `stp_index`, `theta_e` |
 
-Wind comes as separate `U` and `V` components. On some models, including HRDPS and RDPS, these are relative to the model grid rather than true north. See [Grid-relative winds](/docs/cyclone/point-queries#grid-relative-winds).
+Wind comes as separate `U` and `V` components. On some models, including HRDPS and RDPS, these are relative to the model grid rather than true north. See [Grid-relative winds](/cyclone/point-queries#grid-relative-winds).

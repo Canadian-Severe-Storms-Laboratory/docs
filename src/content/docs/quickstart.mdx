@@ -12,7 +12,7 @@ None of these requests need an account. The shell examples use [`jq`](https://jq
 
 <Steps>
   <Step title="Find a station">
-    Raindrop identifies stations by UUID. [`GET /stations/map/details`](/docs/raindrop/stations#station-details) returns every station keyed by ID. The `window=1d` parameter limits it to stations that reported in the last day. This finds the NAV CANADA station at London, Ontario:
+    Raindrop identifies stations by UUID. [`GET /stations/map/details`](/raindrop/stations#station-details) returns every station keyed by ID. The `window=1d` parameter limits it to stations that reported in the last day. This finds the NAV CANADA station at London, Ontario:
 
     ```bash
     curl -s --compressed "https://raindrop.cssl.ca/api/v1/stations/map/details?window=1d" \
@@ -30,7 +30,7 @@ None of these requests need an account. The shell examples use [`jq`](https://jq
   </Step>
 
   <Step title="Get the latest readings">
-    [`POST /stations/readings`](/docs/raindrop/stations#readings-for-specific-stations) returns the most recent reading of each requested variable for the stations you name:
+    [`POST /stations/readings`](/raindrop/stations#readings-for-specific-stations) returns the most recent reading of each requested variable for the stations you name:
 
     ```bash
     curl -s --compressed -X POST \
@@ -64,11 +64,11 @@ None of these requests need an account. The shell examples use [`jq`](https://jq
     }
     ```
 
-    Temperatures are in °C and wind speeds in km/h. [`GET /observations/units`](/docs/raindrop/observations#units) lists the unit for every variable.
+    Temperatures are in °C and wind speeds in km/h. [`GET /observations/units`](/raindrop/observations#units) lists the unit for every variable.
   </Step>
 
   <Step title="Pull a time series">
-    For one variable over a time range, use [`POST /observations/series`](/docs/raindrop/observations#time-series):
+    For one variable over a time range, use [`POST /observations/series`](/raindrop/observations#time-series):
 
     <CodeGroup>
       ```bash title="curl"
@@ -113,11 +113,11 @@ None of these requests need an account. The shell examples use [`jq`](https://jq
       ```
     </CodeGroup>
 
-    Without an account the window can be at most 7 days and must end within the last 7 days. See [time windows](/docs/raindrop/overview#time-windows).
+    Without an account the window can be at most 7 days and must end within the last 7 days. See [time windows](/raindrop/overview#time-windows).
   </Step>
 
   <Step title="Get a forecast from Cyclone">
-    Cyclone serves model output as 256×256 [data tiles](/docs/cyclone/tiles) of packed 16-bit integers. This script reads the RDPS 2 m temperature forecast for London six hours into the latest run:
+    Cyclone serves model output as 256×256 [data tiles](/cyclone/tiles) of packed 16-bit integers. This script reads the RDPS 2 m temperature forecast for London six hours into the latest run:
 
     ```python
     import math
@@ -151,13 +151,13 @@ None of these requests need an account. The shell examples use [`jq`](https://jq
     ```
 
     <Callout type="note">
-      Most Cyclone products use SI units, so this temperature is in kelvin. [`/products`](/docs/cyclone/models#products) lists the unit of every product.
+      Most Cyclone products use SI units, so this temperature is in kelvin. [`/products`](/cyclone/models#products) lists the unit of every product.
     </Callout>
   </Step>
 </Steps>
 
 ## Next steps
 
-- [Authentication](/docs/authentication) covers what an account or API key adds.
-- The [Raindrop API overview](/docs/raindrop/overview) covers conventions, limits and errors.
-- The [Cyclone API overview](/docs/cyclone/overview) explains the models and how runs and forecast hours are addressed.
+- [Authentication](/authentication) covers what an account or API key adds.
+- The [Raindrop API overview](/raindrop/overview) covers conventions, limits and errors.
+- The [Cyclone API overview](/cyclone/overview) explains the models and how runs and forecast hours are addressed.

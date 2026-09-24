@@ -18,7 +18,7 @@ Raindrop's stations come from these feeds. The `network` field on a station hold
 | HailSTORM | 29 stations in Alberta | Every 5 minutes |
 | NOAA Aviation Weather Center | METAR stations in the contiguous US (`NWS`) | Hourly |
 
-Scheduled polls run on the clock (for example :00, :20 and :40 for a 20-minute feed), not at intervals measured from startup. Values are converted to [standard units](/docs/raindrop/observations#units) on arrival.
+Scheduled polls run on the clock (for example :00, :20 and :40 for a 20-minute feed), not at intervals measured from startup. Values are converted to [standard units](/raindrop/observations#units) on arrival.
 
 ## Other Raindrop feeds
 
@@ -51,7 +51,7 @@ By default, Cyclone checks each source for new data every 5 minutes. It checks M
 
 ## Quality control
 
-Every Raindrop observation carries a [quality flag](/docs/raindrop/observations#quality-flags).
+Every Raindrop observation carries a [quality flag](/raindrop/observations#quality-flags).
 
 **ECCC observations** arrive with a quality summary from ECCC's own checks. Raindrop stores it as `baseQuality`, with `reasonQuality` set to `None` for good readings and `Unknown` otherwise. `Suppressed` only comes from ECCC.
 

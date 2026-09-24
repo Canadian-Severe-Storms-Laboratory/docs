@@ -14,23 +14,23 @@ The default mode shows current conditions. Station data and alerts refresh every
 
 | Layer | What it shows | Source |
 | --- | --- | --- |
-| Stations | A WMO station plot, or a single variable: temperature, pressure, dew point or wind gust. Wind barbs are in knots. | Raindrop [readings](/docs/raindrop/stations#readings-in-an-area) |
-| Alerts | ECCC watches, warnings, advisories and statements, filterable by type, colour and hazard, including storm-based polygons | Raindrop [alerts](/docs/raindrop/alerts) |
+| Stations | A WMO station plot, or a single variable: temperature, pressure, dew point or wind gust. Wind barbs are in knots. | Raindrop [readings](/raindrop/stations#readings-in-an-area) |
+| Alerts | ECCC watches, warnings, advisories and statements, filterable by type, colour and hazard, including storm-based polygons | Raindrop [alerts](/raindrop/alerts) |
 | Satellite | GOES-19 infrared, every 10 minutes | Cyclone `goes-east` |
 | Radar | Single-site volumes from ECCC and NEXRAD radars: reflectivity, velocity, azimuthal shear, spectrum width and dual-polarization fields. Requires Pro. | Cyclone `/radar` |
 | Lightning | NLDN lightning density over the last 5 or 30 minutes | Cyclone `mrms-nldn-*` |
 | Max hail size | MRMS Maximum Expected Size of Hail (MESH) | Cyclone `mrms-mesh-30min` |
 
-Clicking a station opens its details and recent history, drawn from [time series](/docs/raindrop/observations#time-series).
+Clicking a station opens its details and recent history, drawn from [time series](/raindrop/observations#time-series).
 
 ## Forecasting
 
 Forecasting mode maps model output from Cyclone. You pick a model, a field and a time. By default the map shows the newest run covering that time; you can also lock it to one run.
 
-- **Models:** HRDPS, RDPS, RRFS, HRRR, NBM, GFS and ICON. Most need a signed-in account; see [plans](/docs/authentication#plans).
-- **Fields:** surface fields, thermodynamics (CAPE, CIN, lifted index, lapse rates), kinematics (bulk shear, storm-relative helicity), composite indices (SCP, STP, SHIP, EHI) and probabilities. Each model's list comes from its [`/products`](/docs/cyclone/models#products).
+- **Models:** HRDPS, RDPS, RRFS, HRRR, NBM, GFS and ICON. Most need a signed-in account; see [plans](/authentication#plans).
+- **Fields:** surface fields, thermodynamics (CAPE, CIN, lifted index, lapse rates), kinematics (bulk shear, storm-relative helicity), composite indices (SCP, STP, SHIP, EHI) and probabilities. Each model's list comes from its [`/products`](/cyclone/models#products).
 - **Overlays:** wind barbs at the surface, on pressure levels, and for shear and storm motion; contours of height, temperature, dew point, θe, wind speed, thickness and pressure; analyzed fronts and pressure centres.
-- **Soundings:** click the map for a Skew-T, a hodograph and derived indices at that point, built from Cyclone [point queries](/docs/cyclone/point-queries).
+- **Soundings:** click the map for a Skew-T, a hodograph and derived indices at that point, built from Cyclone [point queries](/cyclone/point-queries).
 
 Temperatures show in °C by default. You can switch to kelvin.
 
